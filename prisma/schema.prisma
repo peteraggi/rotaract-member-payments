@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("NEXT_PUBLIC_DATABASE_URL")
+}
+
+model User {
+  user_id         Int             @id @default(autoincrement())
+  email           String          @unique @db.VarChar(64)
+  fullName        String          @db.VarChar(24)
+  phone_number    String?         @unique @db.VarChar(16)
+  gender          String?
+  club_name       String?
+  district        String?
+  t_shirt_size    String?
+  otp             String?   // Stores the one-time pin code
+  otpExpiresAt    DateTime? // OTP expiration timestamp
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+  
+  // Back-relations for ease of querying
+  registrations   Registration[]
+  payments        Payment[]
+  
+  @@index([email])
+  @@index([phone_number])
+  @@index([club_name])
+  @@index([district])
+  @@map("user")
+}
+
+model Registration {
+  id                  Int       @id @default(autoincrement())
+  user_id             Int
+  user                User      @relation(fields: [user_id], references: [user_id])
+  registration_status String    @default("pending") // pending, registered, cancelled
+  amount_paid         Float     @default(0)
+  balance             Float     @default(0)
+  payment_status      String    @default("pending") // pending, partially_paid, fully_paid
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+  
+  // Back-relation for payments
+  payments            Payment[]
+  
+  @@index([user_id])
+  @@index([registration_status])
+  @@index([payment_status])
+  @@map("registration")
+}
+
+model Payment {
+  id              Int             @id @default(autoincrement())
+  user_id         Int
+  user            User            @relation(fields: [user_id], references: [user_id])
+  amount          Float
+  payment_method  String
+  transaction_id  String?         @unique
+  payment_date    DateTime        @default(now())
+  registration_id Int?
+  registration    Registration?   @relation(fields: [registration_id], references: [id])
+  created_at      DateTime        @default(now())
+  
+  @@index([user_id])
+  @@index([transaction_id])
+  @@map("payment")
+}

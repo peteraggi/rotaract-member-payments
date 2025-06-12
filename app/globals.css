@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+    --card: 0 0% 95%;
+    --card-foreground: 0 0% 10%;
+    --popover: 0 0% 98%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 220 100% 50%;
+    --primary-foreground: 270 10% 90%;
+    --secondary: 60 4.8% 95.9%;
+    --secondary-foreground: 24 9.8% 10%;
+    --muted: 0 0% 90%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 0 0% 20%;
+    --accent-foreground: 270 10% 90%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 90%;
+    --border: 0 0% 80%;
+    --input: 0 0% 80%;
+    --ring: 0 0% 70%;
+    --radius: 0.5rem;
+    --chart-1: 142 88% 28%;
+    --chart-2: 139 65% 20%;
+    --chart-3: 140 74% 24%;
+    --chart-4: 137 55% 15%;
+    --chart-5: 141 40% 9%;
+
+    /* Sidebar Colors */
+    --sidebar-background: 0 0% 98%; /* Light Gray */
+    --sidebar-foreground: 0 0% 20%; /* Dark Gray Text */
+    --sidebar-primary: 0 0% 10%; /* Even Darker Text */
+    --sidebar-primary-foreground: 0 0% 95%; /* White for Contrast */
+    --sidebar-accent: 0 0% 90%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 0 0% 80%;
+    --sidebar-ring: 0 0% 70%;
+    --sidebar-hover: 0 0% 100%; /* White on Hover */
+  }
+
+  .light {
+    --sidebar-background: 0 0% 98%; /* Light Gray */
+    --sidebar-foreground: 0 0% 20%; /* Dark Gray */
+    --sidebar-primary: 0 0% 15%; /* Slightly Darker */
+    --sidebar-primary-foreground: 0 0% 95%;
+    --sidebar-accent: 0 0% 85%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 0 0% 80%;
+    --sidebar-ring: 0 0% 70%;
+  }
+}
+.sidebar-item {
+  color: var(--sidebar-foreground);
+  transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out;
+}
+
+.sidebar-item:hover {
+  color: var(--sidebar-hover);
+  background-color: var(--sidebar-accent);
+}
