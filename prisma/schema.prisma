@@ -20,8 +20,12 @@ model User {
   phone_number    String?         @unique @db.VarChar(16)
   gender          String?
   club_name       String?
-  district        String?
-  t_shirt_size    String?
+  country         String?         @db.VarChar(50)
+  district        String?         @db.VarChar(20) // District 9212, etc.
+  designation     String?         @db.VarChar(30) // REI Committee, etc.
+  t_shirt_size    String?         @db.VarChar(5)  // S, M, L, etc.
+  dietary_needs   String?         @db.VarChar(20) // Vegetarian, etc.
+  accommodation   String?         @db.VarChar(20) // shared, single
   otp             String?   // Stores the one-time pin code
   otpExpiresAt    DateTime? // OTP expiration timestamp
   created_at      DateTime        @default(now())

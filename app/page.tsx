@@ -76,12 +76,13 @@ export default function Page() {
       <div className="w-full max-w-md">
         <Card className="border border-gray-200 shadow-xl rounded-2xl overflow-hidden bg-white">
           <CardHeader className="space-y-6 text-center bg-gray-50 p-8">
-            <div className="flex justify-center">
+            <div className="flex justify-center ">
               <Image
                 src="/rota.png"
                 alt="Rotary International"
-                width={100}
-                height={100}
+                width={150}
+                height={150}
+
               />
             </div>
             <CardTitle className="text-3xl font-bold text-gray-500">
