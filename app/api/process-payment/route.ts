@@ -159,7 +159,7 @@ async function requestPayment(params: {
 }
 
 // Check payment status
-export async function checkPaymentStatus(internalReference: string) {
+async function checkPaymentStatus(internalReference: string) {
   try {
     const response = await fetch(`${RELWORX_API_ENDPOINT}/check-request-status`, {
       method: 'POST',

@@ -78,7 +78,7 @@ export default function RegisteredView() {
 
         // Pre-fill phone number if available
         if (json.user.phone_number) {
-          const formattedNumber = `256${json.user.phone_number.slice(1)}`;
+          const formattedNumber = `${json.user.phone_number.slice(1)}`;
           console.log("Formatted phone number:", formattedNumber); // Debug log
           setPhoneNumber(formattedNumber);
         }
@@ -408,7 +408,7 @@ export default function RegisteredView() {
                                 <Label>Telephone Number (MTN/Airtel UG)</Label>
                                 <Input
                                   type="tel"
-                                  placeholder="e.g. 256777000999"
+                                  placeholder="e.g. 785721293"
                                   value={phoneNumber}
                                   onChange={(e) =>
                                     setPhoneNumber(e.target.value)
