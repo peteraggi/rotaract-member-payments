@@ -9,7 +9,11 @@ export async function POST(req: Request) {
   const authToken = headersList.get('Authorization')?.replace('Bearer ', '');
   
   if (!authToken) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ 
+      success: false,
+      error: 'UNAUTHORIZED',
+      message: 'Authentication required'
+    }, { status: 401 });
   }
 
   try {
@@ -18,7 +22,11 @@ export async function POST(req: Request) {
     // Validate input
     if (!amount || !phoneNumber) {
       return NextResponse.json(
-        { error: 'Amount and phone number are required' },
+        { 
+          success: false,
+          error: 'VALIDATION_ERROR',
+          message: 'Amount and phone number are required'
+        },
         { status: 400 }
       );
     }
@@ -27,7 +35,12 @@ export async function POST(req: Request) {
     const validationResponse = await validateMobileNumber(phoneNumber);
     if (!validationResponse.success) {
       return NextResponse.json(
-        { error: 'Invalid mobile number: ' + (validationResponse.message || 'Validation failed') },
+        { 
+          success: false,
+          error: 'INVALID_NUMBER',
+          message: `Invalid mobile number: ${validationResponse.message || 'Validation failed'}`,
+          details: validationResponse
+        },
         { status: 400 }
       );
     }
@@ -42,7 +55,9 @@ export async function POST(req: Request) {
     if (!paymentResponse.success) {
       return NextResponse.json(
         { 
-          error: paymentResponse.message || 'Payment request failed',
+          success: false,
+          error: paymentResponse.error_code || 'PAYMENT_FAILED',
+          message: paymentResponse.message || 'Payment request failed',
           details: paymentResponse
         },
         { status: 400 }
@@ -52,6 +67,7 @@ export async function POST(req: Request) {
     // Return the references to track payment status
     return NextResponse.json({
       success: true,
+      status: 'PENDING',
       customerReference: paymentResponse.customer_reference,
       internalReference: paymentResponse.internal_reference,
       message: 'Payment request initiated. Please approve on your phone.',
@@ -62,13 +78,16 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error('Payment processing error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'An error occurred while processing payment' },
+      { 
+        success: false,
+        error: 'SERVER_ERROR',
+        message: error instanceof Error ? error.message : 'An unexpected error occurred'
+      },
       { status: 500 }
     );
   }
 }
 
-// Validate mobile number format and network
 async function validateMobileNumber(phoneNumber: string) {
   try {
     const response = await fetch(`${RELWORX_API_ENDPOINT}/validate`, {
@@ -84,12 +103,12 @@ async function validateMobileNumber(phoneNumber: string) {
     });
 
     const result = await response.json();
-    console.log('Validation response:', result);
-
+    
     if (!response.ok) {
       return {
         success: false,
-        message: result.message || 'Validation failed'
+        message: result.message || 'Validation failed',
+        ...result
       };
     }
 
@@ -97,7 +116,8 @@ async function validateMobileNumber(phoneNumber: string) {
       success: true,
       valid: result.valid,
       network: result.network,
-      message: result.message
+      message: result.message,
+      ...result
     };
 
   } catch (error) {
@@ -109,7 +129,6 @@ async function validateMobileNumber(phoneNumber: string) {
   }
 }
 
-// Request payment from mobile money
 async function requestPayment(params: {
   phoneNumber: string;
   amount: number;
@@ -128,14 +147,13 @@ async function requestPayment(params: {
         msisdn: `+${params.phoneNumber}`,
         amount: params.amount,
         currency: 'UGX',
-        description: 'Conference registration payment',
+        description: params.description,
         reference: `REI-${Date.now()}` // Unique reference for each transaction
       })
     });
 
     const result = await response.json();
-    console.log('Payment response:', result);
-
+    
     if (!response.ok) {
       return {
         success: false,
@@ -154,48 +172,6 @@ async function requestPayment(params: {
     return {
       success: false,
       message: 'Error during payment request'
-    };
-  }
-}
-
-// Check payment status
-async function checkPaymentStatus(internalReference: string) {
-  try {
-    const response = await fetch(`${RELWORX_API_ENDPOINT}/check-request-status`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.relworx.v2',
-        'Authorization': `Bearer ${process.env.RELWORX_API_KEY}`
-      },
-      body: JSON.stringify({
-        account_no: process.env.RELWORX_ACCOUNT_NO,
-        internal_reference: internalReference
-      })
-    });
-
-    const result = await response.json();
-    console.log('Status check response:', result);
-
-    if (!response.ok) {
-      return {
-        success: false,
-        message: result.message || 'Status check failed',
-        ...result
-      };
-    }
-
-    return {
-      success: true,
-      status: result.request_status,
-      ...result
-    };
-
-  } catch (error) {
-    console.error('Status check error:', error);
-    return {
-      success: false,
-      message: 'Error during status check'
     };
   }
 }

@@ -4,13 +4,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
@@ -32,18 +25,27 @@ interface RegistrationData {
   };
 }
 
+interface PaymentDetails {
+  internalReference?: string;
+  customerReference?: string;
+  provider?: string;
+  amount?: number;
+  msisdn?: string;
+  providerTransactionId?: string;
+  completedAt?: string;
+}
+
 export default function RegisteredView() {
   const [data, setData] = useState<RegistrationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<"mobileMoney" | "card">("mobileMoney");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [amount, setAmount] = useState("");
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [showCardPopup, setShowCardPopup] = useState(false);
   const router = useRouter();
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "processing" | "success" | "failed">("idle");
-  const [transactionId, setTransactionId] = useState<string | null>(null);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,7 +54,6 @@ export default function RegisteredView() {
         if (!res.ok) throw new Error("Failed to fetch registration data");
 
         const json = await res.json();
-        console.log("Fetched registration data:", json); // Debug log
         
         if (!json.isRegistered || !json.user) {
           router.push("/registration");
@@ -78,12 +79,13 @@ export default function RegisteredView() {
 
         // Pre-fill phone number if available
         if (json.user.phone_number) {
-          const formattedNumber = `${json.user.phone_number.slice(1)}`;
-          console.log("Formatted phone number:", formattedNumber); // Debug log
+          const formattedNumber = json.user.phone_number.startsWith('+') 
+            ? json.user.phone_number.slice(1) 
+            : json.user.phone_number;
           setPhoneNumber(formattedNumber);
         }
       } catch (error) {
-        console.error("Error fetching registration data:", error); // Debug log
+        console.error("Error fetching registration data:", error);
         toast.error("Failed to load registration data");
         router.push("/registration");
       } finally {
@@ -101,9 +103,43 @@ export default function RegisteredView() {
     };
   }, [pollingInterval]);
 
+  const checkPaymentStatus = async (internalReference: string) => {
+    try {
+      const response = await fetch(
+        `/api/check-payment-status?internal_reference=${encodeURIComponent(internalReference)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Status check failed');
+      }
+
+      return {
+        success: result.success,
+        status: result.status, // "pending", "success", or "failed"
+        message: result.message,
+        data: result.data
+      };
+    } catch (error) {
+      console.error('Status check error:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Status check failed'
+      };
+    }
+  };
+
   const handlePayment = async () => {
     if (!data) {
-      console.error("No registration data available"); // Debug log
+      toast.error("No registration data available");
       return;
     }
 
@@ -113,22 +149,14 @@ export default function RegisteredView() {
       return;
     }
 
-    console.log("Payment data:", { // Debug log
-      amount,
-      phoneNumber,
-      paymentMethod
-    });
-
     // Validate phone number
     const phoneRegex = /^256(77|78|70|75|76|74|39)\d{7}$/;
     if (!phoneRegex.test(phoneNumber)) {
-      console.error("Invalid phone number format:", phoneNumber); // Debug log
       toast.error("Please enter a valid MTN or Airtel Uganda number starting with 256");
       return;
     }
 
     if (data.registration.balance <= 0) {
-      console.error("Invalid payment amount:", data.registration.balance); // Debug log
       toast.error("Payment amount must be greater than 0");
       return;
     }
@@ -137,7 +165,6 @@ export default function RegisteredView() {
     setPaymentLoading(true);
 
     try {
-      console.log("Sending payment request..."); // Debug log
       const response = await fetch("/api/process-payment", {
         method: "POST",
         headers: {
@@ -145,65 +172,66 @@ export default function RegisteredView() {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify({
-          amount: amount,
+          amount: data.registration.balance,
           phoneNumber: phoneNumber,
-          paymentMethod: paymentMethod,
         }),
       });
 
       const result = await response.json();
-      console.log("Payment API response:", result); // Debug log
-
+      
       if (!response.ok) {
-        throw new Error(result.error || "Payment failed");
+        throw new Error(result.message || "Payment failed");
       }
 
-      if (result.transactionId) {
-        console.log("Transaction ID received:", result.transactionId); // Debug log
-        setTransactionId(result.transactionId);
-        toast.success("Payment request sent. Please approve on your phone.");
+      // Save payment references
+      setPaymentDetails({
+        internalReference: result.internalReference,
+        customerReference: result.customerReference,
+        provider: result.provider,
+        amount: data.registration.balance,
+        msisdn: `+${phoneNumber}`
+      });
 
-        // Start polling for payment status
-        const interval = setInterval(async () => {
-          try {
-            console.log("Checking payment status..."); // Debug log
-            const statusResponse = await fetch("/api/check-payment-status", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-              body: JSON.stringify({
-                transactionId: result.transactionId,
-              }),
-            });
+      toast.success(result.message || "Payment request sent. Please approve on your phone.");
 
-            const statusResult = await statusResponse.json();
-            console.log("Payment status check result:", statusResult); // Debug log
+      // Start polling for status
+      const pollStatus = async () => {
+        if (!result.internalReference) return;
+        
+        const statusResult = await checkPaymentStatus(result.internalReference);
 
-            if (statusResult.status === "SUCCESS") {
-              console.log("Payment successful!"); // Debug log
-              clearInterval(interval);
-              setPaymentStatus("success");
-              setPaymentLoading(false);
-              toast.success("Payment confirmed!");
-              router.refresh();
-            } else if (statusResult.status === "FAILED") {
-              console.log("Payment failed"); // Debug log
-              clearInterval(interval);
-              setPaymentStatus("failed");
-              setPaymentLoading(false);
-              toast.error("Payment failed. Please try again.");
-            }
-          } catch (error) {
-            console.error("Status check error:", error);
-          }
-        }, 3000); // Poll every 3 seconds
+        if (!statusResult.success) {
+          throw new Error(statusResult.message);
+        }
 
-        setPollingInterval(interval);
-      }
+        if (statusResult.status === 'success') {
+          clearInterval(interval);
+          setPaymentStatus('success');
+          setPaymentLoading(false);
+          setPaymentDetails(prev => ({
+            ...prev,
+            providerTransactionId: statusResult.data.providerTransactionId,
+            completedAt: statusResult.data.completedAt
+          }));
+          toast.success('Payment confirmed!');
+          router.refresh();
+        } else if (statusResult.status === 'failed') {
+          clearInterval(interval);
+          setPaymentStatus('failed');
+          setPaymentLoading(false);
+          toast.error(statusResult.message || 'Payment failed');
+        }
+      };
+
+      // Initial check after 5 seconds, then every 5 seconds
+      const interval = setInterval(pollStatus, 5000);
+      setPollingInterval(interval);
+
+      // First check after 5 seconds
+      setTimeout(pollStatus, 5000);
+
+      return () => clearInterval(interval);
     } catch (error) {
-      console.error("Payment processing error:", error); // Debug log
       setPaymentStatus("failed");
       setPaymentLoading(false);
       toast.error(error instanceof Error ? error.message : "Payment failed");
@@ -212,12 +240,11 @@ export default function RegisteredView() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="fixed inset-0 bg-white/80 flex items-center justify-center z-50">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary"></div>
       </div>
     );
   }
-
 
   if (!data) {
     return (
@@ -231,6 +258,70 @@ export default function RegisteredView() {
 
   return (
     <>
+      {/* Full-screen loading overlay */}
+   {paymentStatus === "processing" && (
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary mx-auto"></div>
+      <p className="mt-4 text-lg font-medium text-white">Processing payment...</p>
+      <p className="text-gray-300 mt-2">Please approve the payment on your phone</p>
+    </div>
+  </div>
+)}
+
+      {/* Success notification */}
+      {paymentStatus === "success" && paymentDetails && (
+        <div className="fixed inset-0 bg-white/80 flex items-center justify-center z-50">
+          <div className="text-center max-w-md p-6 bg-white rounded-lg shadow-lg border">
+            <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Payment Successful!</h3>
+            <div className="text-left space-y-2 mb-6">
+              <p><span className="font-medium">Amount:</span> UGX {paymentDetails.amount?.toLocaleString()}</p>
+              <p><span className="font-medium">Provider:</span> {paymentDetails.provider?.replace('_', ' ')}</p>
+              <p><span className="font-medium">Phone:</span> {paymentDetails.msisdn}</p>
+              {paymentDetails.providerTransactionId && (
+                <p><span className="font-medium">Transaction ID:</span> {paymentDetails.providerTransactionId}</p>
+              )}
+            </div>
+            <Button
+              onClick={() => {
+                setPaymentStatus("idle");
+                router.refresh();
+              }}
+              className="w-full bg-gray-900 hover:bg-gray-800"
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Failed notification */}
+      {paymentStatus === "failed" && (
+        <div className="fixed inset-0 bg-white/80 flex items-center justify-center z-50">
+          <div className="text-center max-w-md p-6 bg-white rounded-lg shadow-lg border">
+            <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Payment Failed</h3>
+            <p className="text-gray-600 mb-6">We couldn't process your payment. Please try again or contact support.</p>
+            <div className="flex gap-3 w-full">
+              <Button
+                onClick={() => setPaymentStatus("idle")}
+                variant="outline"
+                className="flex-1"
+              >
+                Try Again
+              </Button>
+              <Button
+                onClick={() => window.location.href = "mailto:support@conference.org"}
+                className="flex-1 bg-gray-900 hover:bg-gray-800"
+              >
+                Contact Support
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="min-h-screen bg-gray-50">
         <main className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
@@ -420,10 +511,7 @@ export default function RegisteredView() {
                                 <Label>Amount (UGX)</Label>
                                 <Input
                                   type="text"
-                                  value={amount}
-                                  onChange={(e) =>
-                                    setAmount(e.target.value)
-                                  }
+                                  value={data.registration.balance.toLocaleString()}
                                   // readOnly
                                   className="mt-1 bg-white font-medium"
                                 />
@@ -501,11 +589,11 @@ export default function RegisteredView() {
           </div>
         </main>
       </div>
+
       {showCardPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl animate-fade-in">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
             <div className="flex flex-col items-center text-center space-y-4">
-              {/* Credit Card Icon */}
               <div className="bg-blue-100 p-4 rounded-full">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -523,18 +611,15 @@ export default function RegisteredView() {
                 </svg>
               </div>
 
-              {/* Title */}
               <h3 className="text-xl font-bold text-gray-800">
                 Credit/Debit Card Payments
               </h3>
 
-              {/* Message */}
               <p className="text-gray-600">
                 Credit/Debit card payments are not yet available at the moment.
                 Please contact us for assistance or try Mobile Money payment.
               </p>
 
-              {/* Close Button */}
               <button
                 onClick={() => setShowCardPopup(false)}
                 className="mt-4 w-full bg-gray-900 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
@@ -542,7 +627,6 @@ export default function RegisteredView() {
                 Contact Customer Support
               </button>
 
-              {/* Mobile Money Suggestion */}
               <button
                 onClick={() => {
                   setPaymentMethod("mobileMoney");
@@ -552,108 +636,6 @@ export default function RegisteredView() {
               >
                 Or switch to Mobile Money payment
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {paymentStatus === "processing" && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl animate-fade-in">
-            <div className="flex flex-col items-center text-center space-y-4">
-              <div className="bg-blue-100 p-4 rounded-full animate-pulse">
-                <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />
-              </div>
-
-              <h3 className="text-xl font-bold text-gray-800">
-                Processing Payment
-              </h3>
-
-              <p className="text-gray-600">
-                We've sent a payment request to {phoneNumber}. Please check your
-                phone and approve the payment.
-              </p>
-
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  className="bg-blue-600 h-2.5 rounded-full animate-pulse"
-                  style={{ width: "45%" }}
-                ></div>
-              </div>
-
-              <p className="text-sm text-gray-500">
-                This may take a few moments...
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {paymentStatus === "success" && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl animate-fade-in">
-            <div className="flex flex-col items-center text-center space-y-4">
-              <div className="bg-green-100 p-4 rounded-full">
-                <CheckCircle2 className="h-12 w-12 text-green-600" />
-              </div>
-
-              <h3 className="text-xl font-bold text-gray-800">
-                Payment Successful!
-              </h3>
-
-              <p className="text-gray-600">
-                Your payment of UGX {data.registration.balance.toLocaleString()}
-                has been received successfully.
-              </p>
-
-              <Button
-                onClick={() => {
-                  setPaymentStatus("idle");
-                  router.refresh();
-                }}
-                className="w-full bg-gray-900 hover:bg-gray-800 py-3"
-              >
-                Close
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {paymentStatus === "failed" && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl animate-fade-in">
-            <div className="flex flex-col items-center text-center space-y-4">
-              <div className="bg-red-100 p-4 rounded-full">
-                <XCircle className="h-12 w-12 text-red-600" />
-              </div>
-
-              <h3 className="text-xl font-bold text-gray-800">
-                Payment Failed
-              </h3>
-
-              <p className="text-gray-600">
-                We couldn't process your payment. Please try again or contact
-                support.
-              </p>
-
-              <div className="flex gap-3 w-full">
-                <Button
-                  onClick={() => setPaymentStatus("idle")}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Try Again
-                </Button>
-                <Button
-                  onClick={() =>
-                    (window.location.href = "mailto:support@conference.org")
-                  }
-                  className="flex-1 bg-gray-900 hover:bg-gray-800"
-                >
-                  Contact Support
-                </Button>
-              </div>
             </div>
           </div>
         </div>
