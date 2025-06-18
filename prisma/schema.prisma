@@ -49,6 +49,7 @@ model Registration {
   registration_status String    @default("pending") // pending, registered, cancelled
   amount_paid         Float     @default(0)
   balance             Float     @default(0)
+  total_amount        Float     @default(0) // NEW: Store the original total amount
   payment_status      String    @default("pending") // pending, partially_paid, fully_paid
   created_at          DateTime  @default(now())
   updated_at          DateTime  @updatedAt

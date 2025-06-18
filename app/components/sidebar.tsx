@@ -6,11 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { signOut } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
+import { useState } from 'react'; // Added useState import
+import { Loader2 } from 'lucide-react'; // Added Loader2 import
 
 export function Sidebar() {
   const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false); // Added loading state
 
   const handleLogout = async () => {
+    setIsLoggingOut(true); // Start loading
     try {
       // Clear client-side storage
       localStorage.removeItem('token');
@@ -25,6 +29,8 @@ export function Sidebar() {
     } catch (error) {
       console.error('Logout error:', error);
       toast.error('Failed to log out. Please try again.');
+    } finally {
+      setIsLoggingOut(false); // Stop loading regardless of outcome
     }
   };
 
@@ -59,14 +65,6 @@ export function Sidebar() {
           <User className="mr-3 h-5 w-5 md:h-6 md:w-6" />
           My Registration
         </Link>
-        {/* <Link href="/events" className="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-gray-100 text-gray-700 hover:text-gray-900 md:text-base">
-          <Calendar className="mr-3 h-5 w-5 md:h-6 md:w-6" />
-          Events
-        </Link>
-        <Link href="/members" className="flex items-center px-2 py-2 text-sm font-medium rounded-md hover:bg-gray-100 text-gray-700 hover:text-gray-900 md:text-base">
-          <Users className="mr-3 h-5 w-5 md:h-6 md:w-6" />
-          Members
-        </Link> */}
       </nav>
       
       {/* Logout Button */}
@@ -76,9 +74,19 @@ export function Sidebar() {
           variant="ghost" 
           className="w-full justify-start text-white bg-gray-900 hover:bg-red-700 hover:text-white
                     transition-colors duration-200"
+          disabled={isLoggingOut} // Disable button during logout
         >
-          <LogOut className="mr-3 h-5 w-5" />
-          <span className="text-sm md:text-base">Sign Out</span>
+          {isLoggingOut ? (
+            <>
+              <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+              <span className="text-sm md:text-base">Signing Out...</span>
+            </>
+          ) : (
+            <>
+              <LogOut className="mr-3 h-5 w-5" />
+              <span className="text-sm md:text-base">Sign Out</span>
+            </>
+          )}
         </Button>
       </div>
     </div>
