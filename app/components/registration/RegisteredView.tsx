@@ -114,6 +114,10 @@ export default function RegisteredView() {
     fetchData();
   }, [router]);
 
+  const UgandaFlag = () => (
+  <span role="img" aria-label="Uganda">🇺🇬</span>
+);
+
   useEffect(() => {
     return () => {
       if (pollingInterval) clearInterval(pollingInterval);
@@ -556,7 +560,7 @@ export default function RegisteredView() {
                                     Mobile Money
                                   </Label>
                                   <p className="text-sm text-gray-500">
-                                    🇺🇬 Pay with MTN/Airtel Uganda
+                                  🇺🇬 Pay with MTN/Airtel Uganda
                                   </p>
                                 </div>
                               </div>
