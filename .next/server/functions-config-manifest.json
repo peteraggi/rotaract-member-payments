@@ -1,1 +1,1 @@
-{"version":1,"functions":{"/api/member-details":{},"/api/auth/[...nextauth]":{},"/api/check-registration":{}}}
+{"version":1,"functions":{"/api/auth/[...nextauth]":{},"/api/check-registration":{},"/api/member-details":{}}}

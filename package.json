@@ -4,9 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "postinstall": "prisma generate",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+     "find:unused": "next-unused",
+    "knip": "knip"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.1",
