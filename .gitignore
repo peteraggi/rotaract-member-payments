@@ -1,10 +1,10 @@
 # Dependency directories
 node_modules/
-.next/
+# .next/
 out/
 
 # Build files
-.next/
+# .next/
 dist/
 
 # Cache
