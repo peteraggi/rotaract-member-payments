@@ -7,8 +7,8 @@ import PaymentConfirmation from "@/components/email/PaymentConfirmation";
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "kanlyteug@gmail.com",
-    pass: "kkcvsaypbtgjwjvx",
+    user: "aggipeter25@gmail.com",
+    pass: "dvmslnjeullrxoun",
   },
 });
 
