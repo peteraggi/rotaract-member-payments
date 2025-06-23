@@ -4,12 +4,10 @@ import { render } from "@react-email/render";
 
 // SMTP configuration
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
+  service: process.env.EMAIL_SERVICE,
   auth: {
-    user: "aggipeter25@gmail.com",
-    pass: "dvmslnjeullrxoun",
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
