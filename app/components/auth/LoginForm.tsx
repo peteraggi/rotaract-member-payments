@@ -32,7 +32,7 @@ export default function LoginForm() {
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const callbackUrl = searchParams.get('callbackUrl') || '/registration';
+  const callbackUrl = '/registration';
   const email = searchParams.get('email') || '';
   // const { data: session } = useSession({required: true,});
 
