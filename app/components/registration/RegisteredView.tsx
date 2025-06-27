@@ -37,10 +37,20 @@ interface PaymentDetails {
   completedAt?: string;
 }
 
+// const CustomToast = ({ message, type }: { message: string; type: 'success' | 'error' }) => (
+//   <div className={`max-w-xs md:max-w-sm break-words flex items-start gap-2 p-3 rounded-md ${
+//     type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+//   }`}>
+//     {type === 'success' ? (
+//       <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
+//     ) : (
+//       <XCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+//     )}
+//     <span>{message}</span>
+//   </div>
+// );
 const CustomToast = ({ message, type }: { message: string; type: 'success' | 'error' }) => (
-  <div className={`max-w-xs md:max-w-sm break-words flex items-start gap-2 p-3 rounded-md ${
-    type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-  }`}>
+  <div className="flex items-start gap-2">
     {type === 'success' ? (
       <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
     ) : (
@@ -49,6 +59,7 @@ const CustomToast = ({ message, type }: { message: string; type: 'success' | 'er
     <span>{message}</span>
   </div>
 );
+
 
 export default function RegisteredView() {
   const [data, setData] = useState<RegistrationData | null>(null);
@@ -222,7 +233,7 @@ export default function RegisteredView() {
 
   const handlePayment = async () => {
     if (!data) {
-      toast.error(<CustomToast message="No registration data available" type="error" />);
+      toast.error("No registration data available");
       return;
     }
 
@@ -233,12 +244,12 @@ export default function RegisteredView() {
 
     const phoneRegex = /^256(77|78|70|75|76|74|39)\d{7}$/;
     if (!phoneRegex.test(phoneNumber)) {
-      toast.error(<CustomToast message="Please enter a valid MTN or Airtel Uganda number starting with 256" type="error" />);
+      toast.error("Please enter a valid MTN or Airtel Uganda number starting with 256");
       return;
     }
 
     if (data.registration.balance <= 0) {
-      toast.error(<CustomToast message="Payment amount must be greater than 0" type="error" />);
+      toast.error("Payment amount must be greater than 0");
       return;
     }
 
@@ -272,7 +283,7 @@ export default function RegisteredView() {
         msisdn: `+${phoneNumber}`
       });
 
-      toast.success(<CustomToast message={result.message || "Payment request sent. Please approve on your phone."} type="success" />);
+      toast.success(result.message || "Payment request sent. Please approve on your phone.");
 
       const pollStatus = async () => {
         if (!result.internalReference) return;
@@ -321,13 +332,13 @@ export default function RegisteredView() {
           }));
           
           setShowSuccessPopup(true);
-          toast.success(<CustomToast message="Payment confirmed and saved!" type="success" />);
+          toast.success("Payment confirmed and saved!");
           router.refresh();
         } else if (statusResult.status === 'failed') {
           clearInterval(interval);
           setPaymentStatus('failed');
           setPaymentLoading(false);
-          toast.error(<CustomToast message={statusResult.message || 'Payment failed'} type="error" />);
+          toast.error('Payment failed Please try again');
         }
       };
 
@@ -339,7 +350,7 @@ export default function RegisteredView() {
     } catch (error) {
       setPaymentStatus("failed");
       setPaymentLoading(false);
-      toast.error(<CustomToast message={error instanceof Error ? error.message : "Payment failed"} type="error" />);
+      toast.error(error instanceof Error ? error.message : "Payment failed");
     }
   };
 
