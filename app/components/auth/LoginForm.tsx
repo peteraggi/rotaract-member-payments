@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
+import { SignInResponse } from "next-auth/react";
 import * as z from 'zod';
 import {
   Form,
@@ -51,7 +52,7 @@ export default function LoginForm() {
       toast.error("Failed to resend PIN");
     }
   };
-
+  
   const onSubmit = (values: z.infer<typeof OtpSchema>) => {
     startTransition(async () => {
       try {
@@ -62,38 +63,32 @@ export default function LoginForm() {
         const result = await signIn('credentials', {
           email,
           pinCode: values.pin,
-          redirect: false,
-          callbackUrl,
-        });
+          callbackUrl: callbackUrl || '/registration',
+        }) as SignInResponse | undefined;
   
-        if (result?.error) {
-          // Parse NextAuth errors
-          let userMessage = "Invalid credentials";
+        if (result && 'error' in result) {
+          const errorMessages: Record<string, string> = {
+            "PIN has expired": "The PIN has expired. Please request a new one.",
+            "No PIN generated": "No valid PIN exists for this account.",
+            "Invalid PIN": "The PIN you entered is incorrect.",
+            "CredentialsSignin": "Invalid email or PIN",
+          };
+  
+          const userMessage = result.error ? 
+            (errorMessages[result.error] || "Invalid credentials") : 
+            "Authentication failed";
           
-          if (result.error.includes("PIN has expired")) {
-            userMessage = "The PIN has expired. Please request a new one.";
-          } else if (result.error.includes("No PIN generated")) {
-            userMessage = "No valid PIN exists for this account.";
-          } else if (result.error.includes("Invalid PIN")) {
-            userMessage = "The PIN you entered is incorrect.";
-          } else if (result.error === "CredentialsSignin") {
-            userMessage = "Invalid email or PIN";
-          }
-  
           setError(userMessage);
           toast.error(userMessage);
-        } else if (result?.ok) {
-          toast.success("Login Successful");
-          router.push('/registration'); // Use the callbackUrl here
         }
-      } catch (error) {
+      } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
         setError(errorMessage);
         toast.error("Network error. Please try again.");
       }
     });
   };
-
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f0f4f8] to-[#dfe7ef] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
