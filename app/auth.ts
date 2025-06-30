@@ -20,6 +20,7 @@ const prisma = new PrismaClient();
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
   trustHost: true,
+  basePath: "/api/auth",
   secret: process.env.AUTH_SECRET,
   providers: [
     CredentialsProvider({
@@ -90,6 +91,18 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       }
       return token;
     },
+  },
+  cookies: {
+    sessionToken: {
+      name: `__Secure-next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        domain: process.env.NODE_ENV === "production" ? ".kanlyte.com" : undefined
+      }
+    }
   },
   
   // Optional: Custom login page
