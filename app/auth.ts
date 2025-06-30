@@ -89,8 +89,13 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         // Add other custom fields to JWT
       }
       return token;
-    }
+    },
+    async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
+      if (url.startsWith('/api/auth')) return url;
+      return `${baseUrl}/registration`;
+    },
   },
+  
   // Optional: Custom login page
   pages: {
     signIn: "/",
