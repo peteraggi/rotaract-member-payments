@@ -64,7 +64,7 @@ const onSubmit = (values: z.infer<typeof OtpSchema>) => {
           email,
           pinCode: values.pin,
           redirect: false,
-          callbackUrl: '/registration', // Use the callbackUrl here
+          callbackUrl: callbackUrl ?? '/registration',
         });
   
         if (result?.error) {
@@ -85,7 +85,7 @@ const onSubmit = (values: z.infer<typeof OtpSchema>) => {
           toast.error(userMessage);
         } else if (result?.ok) {
           toast.success("Login Successful");
-          router.push('/registration'); // Use the callbackUrl here
+          router.push(result.url ?? '/registration');
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
