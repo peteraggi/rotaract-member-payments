@@ -6,7 +6,6 @@ import { prisma } from '@/lib/prisma';
 
 export default async function RegistrationPage() {
   // 1. Check authentication
-  await new Promise(res => setTimeout(res, 150));
   const session = await auth();
   if (!session?.user?.email) {
     redirect('/?callbackUrl=/registration');
