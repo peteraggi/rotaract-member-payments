@@ -25,7 +25,10 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  if (isAuthRoute && token) {
+  // if (isAuthRoute && token) {
+  //   return NextResponse.redirect(new URL('/registration', request.url));
+  // }
+  if (isAuthRoute && token && !token.hasCompletedProfile) {
     return NextResponse.redirect(new URL('/registration', request.url));
   }
 
