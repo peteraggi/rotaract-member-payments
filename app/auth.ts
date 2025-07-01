@@ -14,7 +14,6 @@ interface User extends AuthUser {
   otpExpiresAt?: Date | null;
   created_at: Date;
   updated_at: Date;
-  hasCompletedProfile?: boolean; // Added property
 }
 
 const prisma = new PrismaClient();
@@ -75,7 +74,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         session.user.club_name = token.club_name as string | null;
         session.user.district = token.district as string | null;
         session.user.t_shirt_size = token.t_shirt_size as string | null;
-        session.user.hasCompletedProfile = token.hasCompletedProfile as boolean;
         // Dates might need special handling if they're being serialized
       }
       return session;

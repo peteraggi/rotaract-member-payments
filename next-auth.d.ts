@@ -13,7 +13,6 @@ declare module "next-auth" {
     otpExpiresAt?: Date | null;
     created_at: Date;
     updated_at: Date;
-    hasCompletedProfile?: boolean; // Added property to track profile completion
   }
 
   interface Session {
