@@ -64,7 +64,7 @@ const onSubmit = (values: z.infer<typeof OtpSchema>) => {
           email,
           pinCode: values.pin,
           redirect: false,
-          callbackUrl,
+          callbackUrl: '/registration', // Use the callbackUrl here
         });
   
         if (result?.error) {
