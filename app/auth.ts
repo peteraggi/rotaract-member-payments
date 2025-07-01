@@ -86,7 +86,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         token.club_name = user.club_name;
         token.district = user.district;
         token.t_shirt_size = user.t_shirt_size;
-        token.hasCompletedProfile = Boolean(user.club_name && user.district);
         // Add other custom fields to JWT
       }
       return token;
