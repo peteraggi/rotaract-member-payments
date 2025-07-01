@@ -66,6 +66,8 @@ const onSubmit = (values: z.infer<typeof OtpSchema>) => {
           redirect: false,
           callbackUrl,
         });
+        console.log('SignIn result:', result);
+
   
         if (result?.error) {
           // Parse NextAuth errors

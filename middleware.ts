@@ -25,12 +25,12 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  if (isAuthRoute && token) {
-    return NextResponse.redirect(new URL('/registration', request.url));
-  }
-  // if (isAuthRoute && token && !token.hasCompletedProfile) {
+  // if (isAuthRoute && token) {
   //   return NextResponse.redirect(new URL('/registration', request.url));
   // }
+  if (isAuthRoute && token && !token.hasCompletedProfile) {
+    return NextResponse.redirect(new URL('/registration', request.url));
+  }
 
   return NextResponse.next();
 }
