@@ -31,9 +31,7 @@ export async function middleware(request: NextRequest) {
   const isFromCallback = searchParams.has('callbackUrl');
 
   if (isAuthRoute && token && !isFromCallback) {
-  return NextResponse.rewrite(new URL("/registration", request.url), {
-    status: 303,
-  })};
+  return NextResponse.rewrite(new URL("/registration", request.url))};
 
   return NextResponse.next();
 }
