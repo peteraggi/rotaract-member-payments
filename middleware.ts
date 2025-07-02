@@ -28,12 +28,12 @@ export async function middleware(request: NextRequest) {
   // if (isAuthRoute && token) {
   //   return NextResponse.redirect(new URL('/registration', request.url));
   // }
-  // const isFromCallback = searchParams.has('callbackUrl');
+  const isFromCallback = searchParams.has('callbackUrl');
 
-  // if (isAuthRoute && token && !isFromCallback) {
-  //   return NextResponse.redirect(new URL('/registration', request.url));
-  // }
-
+  if (isAuthRoute && token && !isFromCallback) {
+  return NextResponse.rewrite(new URL("/registration", request.url), {
+    status: 303,
+  })};
 
   return NextResponse.next();
 }
