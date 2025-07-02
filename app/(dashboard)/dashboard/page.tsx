@@ -8,7 +8,7 @@ export default async function RegistrationPage() {
   // 1. Check authentication
   const session = await auth();
   if (!session?.user?.email) {
-    redirect('/?callbackUrl=/registration');
+    redirect('/?callbackUrl=/dashboard');
   }
 
   // 2. Check registration status directly in database

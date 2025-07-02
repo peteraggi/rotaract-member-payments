@@ -12,7 +12,7 @@ export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
   // Protected routes
-  const protectedRoutes = ['/registration'];
+  const protectedRoutes = ['/dashboard'];
   const isProtected = protectedRoutes.some(route => pathname.startsWith(route));
 
   // Auth routes
@@ -31,7 +31,7 @@ export async function middleware(request: NextRequest) {
   const isFromCallback = searchParams.has('callbackUrl');
 
   if (isAuthRoute && token && !isFromCallback) {
-  return NextResponse.rewrite(new URL("/registration", request.url))};
+  return NextResponse.rewrite(new URL("/dashboard", request.url))};
 
   return NextResponse.next();
 }
