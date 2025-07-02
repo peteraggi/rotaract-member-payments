@@ -33,7 +33,7 @@ export default function LoginForm() {
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const callbackUrl = '/registration';
+  // const callbackUrl = '/registration';
   const email = searchParams.get('email') || '';
   // const { data: session } = useSession({required: true,});
 
@@ -64,11 +64,9 @@ const onSubmit = (values: z.infer<typeof OtpSchema>) => {
           email,
           pinCode: values.pin,
           redirect: false,
-          callbackUrl,
+          callbackUrl: '/registration',
         });
         console.log('SignIn result:', result);
-
-  
         if (result?.error) {
           // Parse NextAuth errors
           let userMessage = "Invalid credentials";
@@ -87,7 +85,7 @@ const onSubmit = (values: z.infer<typeof OtpSchema>) => {
           toast.error(userMessage);
         } else if (result?.ok) {
           toast.success("Login Successful");
-          router.push('/registration');
+          router.push(result.url || '/registration');
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
