@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
     
   });
   
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
 
   // Protected routes
   const protectedRoutes = ['/registration'];
@@ -28,10 +28,12 @@ export async function middleware(request: NextRequest) {
   // if (isAuthRoute && token) {
   //   return NextResponse.redirect(new URL('/registration', request.url));
   // }
-  if (isAuthRoute && token && !request.nextUrl.searchParams.has('callbackUrl')) {
+  const isFromCallback = searchParams.has('callbackUrl');
+
+  if (isAuthRoute && token && !isFromCallback) {
     return NextResponse.redirect(new URL('/registration', request.url));
   }
-  
+
 
   return NextResponse.next();
 }
