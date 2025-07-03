@@ -91,6 +91,14 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       }
       return token;
     },
+    async redirect({ url, baseUrl }) {
+      const decodedUrl = decodeURIComponent(url);
+      const callbackUrl = new URL(decodedUrl, baseUrl).searchParams.get('callbackUrl');
+      if (callbackUrl) {
+        return `${baseUrl}${callbackUrl.startsWith('/') ? '' : '/'}${callbackUrl}`;
+      }
+      return url.startsWith(baseUrl) ? url : baseUrl;
+    },
 
   },
   // Optional: Custom login page
