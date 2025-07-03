@@ -63,29 +63,29 @@ const onSubmit = (values: z.infer<typeof OtpSchema>) => {
         const result = await signIn('credentials', {
           email,
           pinCode: values.pin,
-          redirect: true,
+          redirect: false,
           callbackUrl: '/registration',
         });
         console.log('SignIn result:', result);
-        // if (result?.error) {
-        //   let userMessage = "Invalid credentials";
+        if (result?.error) {
+          let userMessage = "Invalid credentials";
           
-        //   if (result.error.includes("PIN has expired")) {
-        //     userMessage = "The PIN has expired. Please request a new one.";
-        //   } else if (result.error.includes("No PIN generated")) {
-        //     userMessage = "No valid PIN exists for this account.";
-        //   } else if (result.error.includes("Invalid PIN")) {
-        //     userMessage = "The PIN you entered is incorrect.";
-        //   } else if (result.error === "CredentialsSignin") {
-        //     userMessage = "Invalid email or PIN";
-        //   }
+          if (result.error.includes("PIN has expired")) {
+            userMessage = "The PIN has expired. Please request a new one.";
+          } else if (result.error.includes("No PIN generated")) {
+            userMessage = "No valid PIN exists for this account.";
+          } else if (result.error.includes("Invalid PIN")) {
+            userMessage = "The PIN you entered is incorrect.";
+          } else if (result.error === "CredentialsSignin") {
+            userMessage = "Invalid email or PIN";
+          }
   
-        //   setError(userMessage);
-        //   toast.error(userMessage);
-        // } else if (result?.ok) {
-        //   toast.success("Login Successful");
-        //   router.push(result.url || '/registration');
-        // }
+          setError(userMessage);
+          toast.error(userMessage);
+        } else if (result?.ok) {
+          toast.success("Login Successful");
+          router.push(result.url || '/registration');
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
         setError(errorMessage);
