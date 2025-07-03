@@ -29,17 +29,14 @@ export async function middleware(request: NextRequest) {
   }
 
   // Handle auth routes with token
-  if (pathname === '/' && token) {
-    // If coming from callback, proceed to the callbackUrl
-    if (searchParams.has('callbackUrl')) {
-      const callbackUrl = searchParams.get('callbackUrl')!;
-      return NextResponse.redirect(new URL(callbackUrl, request.url));
+  if (pathname === '/registration') {
+    if (!token) {
+      return NextResponse.redirect(
+        new URL(`/?callbackUrl=${encodeURIComponent(pathname)}`, request.url)
+      );
     }
-    // Otherwise redirect to default protected route
-    return NextResponse.redirect(new URL('/registration', request.url));
+    return NextResponse.next();
   }
-
-  return NextResponse.next();
 }
 
 export const config = {
