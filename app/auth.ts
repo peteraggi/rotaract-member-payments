@@ -66,13 +66,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async redirect({ url, baseUrl }) {
-      const callbackUrl = new URL(url).searchParams.get('callbackUrl');
-      if (callbackUrl) {
-        return `${baseUrl}${callbackUrl.startsWith('/') ? '' : '/'}${callbackUrl}`;
-      }
-      return url.startsWith(baseUrl) ? url : baseUrl;
-    },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.user_id = token.user_id as number;
