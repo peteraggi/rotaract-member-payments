@@ -11,31 +11,37 @@ export async function middleware(request: NextRequest) {
   
   const { pathname, searchParams } = request.nextUrl;
 
+  const callbackUrl = searchParams.get('callbackUrl') || '/registration';
+
+  // Public routes that don't need protection
+  const publicRoutes = ['/', '/auth','/login'];
+  const isPublicRoute = publicRoutes.includes(pathname);
+
   // Protected routes
   const protectedRoutes = ['/registration'];
-  const isProtected = protectedRoutes.some(route => pathname.startsWith(route));
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
-  // Auth routes
-  const authRoutes = ['/'];
-  const isAuthRoute = authRoutes.includes(pathname);
-
-  if (isProtected && !token) {
-    return NextResponse.redirect(
-      new URL(`/?callbackUrl=${encodeURIComponent(pathname)}`, request.url)
-    );
+  // Handle protected routes without token
+  if (isProtectedRoute && !token) {
+    const signInUrl = new URL('/', request.url);
+    signInUrl.searchParams.set('callbackUrl', encodeURIComponent(request.url));
+    return NextResponse.redirect(signInUrl);
   }
 
-  // if (isAuthRoute && token) {
-  //   return NextResponse.redirect(new URL('/registration', request.url));
-  // }
-  const isFromCallback = searchParams.has('callbackUrl');
-
-  if (isAuthRoute && token && !isFromCallback) {
-  return NextResponse.rewrite(new URL("/registration", request.url))};
+  // Handle auth routes with token
+  if (pathname === '/' && token) {
+    // If coming from callback, proceed to the callbackUrl
+    if (searchParams.has('callbackUrl')) {
+      const callbackUrl = searchParams.get('callbackUrl')!;
+      return NextResponse.redirect(new URL(callbackUrl, request.url));
+    }
+    // Otherwise redirect to default protected route
+    return NextResponse.redirect(new URL('/registration', request.url));
+  }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.).*)'],
 };

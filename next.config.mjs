@@ -29,13 +29,7 @@ const nextConfig = {
     ];
   },
   async redirects() {
-    return [
-      {
-        source: '/registration',
-        destination: '/', // Your actual signup page
-        permanent: false, // 307 redirect
-      },
-    ]
+    return []
   }
 };
 
