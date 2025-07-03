@@ -87,9 +87,10 @@ const onSubmit = (values: z.infer<typeof OtpSchema>) => {
         //   router.push(result.url || '/registration');
         // }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-        setError(errorMessage);
-        toast.error("Network error. Please try again.");
+        // const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+        // setError(errorMessage);
+        // toast.error("Network error. Please try again.");
+        
       }
     });
   };
