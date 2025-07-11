@@ -326,16 +326,6 @@ export default function RegisteredView() {
         msisdn: `+${phoneNumber}`,
       });
 
-       await sendPaymentConfirmation({
-              email: data.user.email,
-              fullName: data.user.fullName,
-              amountPaid: Number(amount),
-              balance: data.registration.balance - Number(amount),
-              totalAmount: totalAmount,
-              paymentMethod: "Mobile Money",
-              transactionId: result.internalReference,
-            });
-
       toast.success(
         result.message || "Payment request sent. Please approve on your phone."
       );
