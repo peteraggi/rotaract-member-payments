@@ -152,7 +152,7 @@ export async function middleware(request: NextRequest) {
   const isAdmin = token?.isAdmin; // Now using the isAdmin flag from JWT
 
   // Protected routes
-  const protectedRoutes = ['/reports', '/profile', '/admin'];
+  const protectedRoutes = ['/reports', '/profile',];
   const isProtected = protectedRoutes.some(route => pathname.startsWith(route));
 
   // Public routes
