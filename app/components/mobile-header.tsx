@@ -39,11 +39,6 @@ export function MobileHeader( { session, isAdmin }: {
           className="object-contain"
         />
       </div>
-      {isAdmin && (
-        <Link href="/reports" className="ml-2 p-2">
-          <FileText className="h-6 w-6 text-gray-700" />
-        </Link>
-      )}
     </header>
   );
 }
