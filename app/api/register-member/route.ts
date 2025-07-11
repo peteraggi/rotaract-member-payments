@@ -26,6 +26,7 @@ export async function POST(request: Request) {
         designation: data.designation,
         t_shirt_size: data.shirtSize,
         dietary_needs: data.dietaryRestrictions,
+        special_medical_conditions: data.special_medical_conditions,
         accommodation: data.accommodation,
       },
     });

@@ -25,6 +25,7 @@ model User {
   designation     String?         @db.VarChar(30) // REI Committee, etc.
   t_shirt_size    String?         @db.VarChar(5)  // S, M, L, etc.
   dietary_needs   String?         @db.VarChar(20) // Vegetarian, etc.
+  special_medical_conditions String? @db.VarChar(40)
   accommodation   String?         @db.VarChar(20) // shared, single
   otp             String?   // Stores the one-time pin code
   otpExpiresAt    DateTime? // OTP expiration timestamp

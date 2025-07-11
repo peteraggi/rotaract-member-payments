@@ -8,10 +8,15 @@ import { signOut } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { useState } from 'react'; // Added useState import
 import { Loader2 } from 'lucide-react'; // Added Loader2 import
+import { usePathname } from 'next/navigation';
 
-export function Sidebar() {
+export function Sidebar({ session, isAdmin }: { 
+  session: any;
+  isAdmin: boolean;
+}) {
   const router = useRouter();
-  const [isLoggingOut, setIsLoggingOut] = useState(false); // Added loading state
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const pathname = usePathname();
 
   const handleLogout = async () => {
     setIsLoggingOut(true); // Start loading
@@ -20,7 +25,6 @@ export function Sidebar() {
       localStorage.removeItem('token');
       sessionStorage.clear();
       
-      // Sign out from NextAuth if using authentication
       await signOut({ redirect: false });
       
       // Redirect to login page
@@ -40,7 +44,7 @@ export function Sidebar() {
       <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200 
                       md:h-20 lg:h-24">
         <img 
-          src="/rota.png" 
+          src="/logo.png" 
           alt="Rotary" 
           className="h-12 w-auto transition-all duration-300 hover:scale-105 
                     sm:h-14 md:h-16 lg:h-20"
@@ -53,19 +57,36 @@ export function Sidebar() {
           <AvatarImage src="/profile.png" />
           <AvatarFallback>RU</AvatarFallback>
         </Avatar>
-        <div className="ml-3">
-          <p className="text-sm font-medium md:text-base">Rotary User</p>
-          <p className="text-xs text-gray-500 md:text-sm">Member</p>
+         <div className="ml-3">
+          <p className="text-sm font-medium md:text-base">
+            {session?.user?.name || 'Rotary User'}
+          </p>
+          <p className="text-xs text-gray-500 md:text-sm">
+            {isAdmin ? 'Admin' : 'Member'}
+          </p>
         </div>
       </div>
       
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-4 space-y-1">
-        <Link href="/registration" className="flex items-center px-2 py-2 text-sm font-medium rounded-md bg-gray-100 text-gray-900 md:text-base">
-          <User className="mr-3 h-5 w-5 md:h-6 md:w-6" />
-          My Registration
-        </Link>
-      </nav>
+     <nav className="flex-1 px-2 py-4 space-y-1">
+  {isAdmin ? (
+    <Link 
+      href="/admin" 
+      className={`flex items-center px-2 py-2 text-sm font-medium rounded-md ${pathname === '/admin' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-100'} md:text-base`}
+    >
+      <FileText className="mr-3 h-5 w-5 md:h-6 md:w-6" />
+      All Reports
+    </Link>
+  ) : (
+    <Link 
+      href="/registration" 
+      className={`flex items-center px-2 py-2 text-sm font-medium rounded-md ${pathname === '/registration' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-100'} md:text-base`}
+    >
+      <User className="mr-3 h-5 w-5 md:h-6 md:w-6" />
+      My Registration
+    </Link>
+  )}
+</nav>
       
       {/* Logout Button */}
       <div className="p-4 border-t border-gray-200">
@@ -74,7 +95,7 @@ export function Sidebar() {
           variant="ghost" 
           className="w-full justify-start text-white bg-gray-900 hover:bg-red-700 hover:text-white
                     transition-colors duration-200"
-          disabled={isLoggingOut} // Disable button during logout
+          disabled={isLoggingOut} 
         >
           {isLoggingOut ? (
             <>

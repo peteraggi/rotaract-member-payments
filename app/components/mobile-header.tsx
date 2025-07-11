@@ -1,26 +1,49 @@
 'use client';
 
-import { Menu } from 'lucide-react';
+import { FileText, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Sidebar } from './sidebar';
+import Image from 'next/image';
+import Link from 'next/link';
 
-export function MobileHeader() {
+export function MobileHeader( { session, isAdmin }: {
+  session: any; // Adjust type as needed, e.g., Session from next-auth
+  isAdmin: boolean;
+}) {
   return (
-    <header className="md:hidden flex items-center h-16 px-4 border-b border-gray-200 bg-white">
+    <header className="md:hidden flex items-center h-20 px-6 border-b-2 border-gray-200 bg-white">
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu className="h-6 w-6" />
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="md:hidden p-3"
+          >
+            <Menu className="h-8 w-8" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-64">
-          <Sidebar />
+        <SheetContent 
+          side="left" 
+          className="p-0 w-72"
+        >
+          <Sidebar session={session} isAdmin={isAdmin} />
         </SheetContent>
       </Sheet>
       <div className="flex-1 flex justify-center">
-        <img src="/rota.png" alt="Rotary" className="h-8" />
+        <Image 
+          src="/logo.png" 
+          alt="Rotary" 
+          width={160} 
+          height={80}
+          className="object-contain"
+        />
       </div>
+      {isAdmin && (
+        <Link href="/reports" className="ml-2 p-2">
+          <FileText className="h-6 w-6 text-gray-700" />
+        </Link>
+      )}
     </header>
   );
 }

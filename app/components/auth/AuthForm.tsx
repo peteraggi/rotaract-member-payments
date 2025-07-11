@@ -80,10 +80,10 @@ export default function AuthForm() {
           <CardHeader className="space-y-6 text-center bg-gray-50 p-8">
             <div className="flex justify-center">
               <Image
-                src="/rota.png"
+                src="/logo.png"
                 alt="Rotary International"
-                width={100}
-                height={100}
+                width={200}
+                height={200}
               />
             </div>
           </CardHeader>
@@ -111,7 +111,7 @@ export default function AuthForm() {
                             <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                             <Input
                               {...field}
-                              placeholder="John Doe"
+                              placeholder="e.g Kato John..."
                               disabled={isPending}
                               className="py-5 px-4 border-gray-300 rounded-lg text-base pl-10"
                             />

@@ -52,8 +52,7 @@ export default function LoginForm() {
       toast.error("Failed to resend PIN");
     }
   };
-  
-const onSubmit = (values: z.infer<typeof OtpSchema>) => {
+ const onSubmit = (values: z.infer<typeof OtpSchema>) => {
     startTransition(async () => {
       try {
         if (!email) {
@@ -63,10 +62,9 @@ const onSubmit = (values: z.infer<typeof OtpSchema>) => {
         const result = await signIn('credentials', {
           email,
           pinCode: values.pin,
-          redirect: false,
-          callbackUrl: '/registration',
+          redirect: false, // Important: We handle redirect manually
         });
-        console.log('SignIn result:', result);
+
         if (result?.error) {
           let userMessage = "Invalid credentials";
           
@@ -82,19 +80,26 @@ const onSubmit = (values: z.infer<typeof OtpSchema>) => {
   
           setError(userMessage);
           toast.error(userMessage);
-        } else if (result?.ok) {
-          toast.success("Login Successful");
-          router.push(result.url || '/registration');
+          return;
         }
+
+        // Successful login - check if admin
+        const isAdmin = email === process.env.ADMIN_EMAIL;
+        
+        // Redirect based on admin status
+        if (isAdmin) {
+          router.push('/admin');
+        } else {
+          router.push('/registration');
+        }
+
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
         setError(errorMessage);
         toast.error("Network error. Please try again.");
-        
       }
     });
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f0f4f8] to-[#dfe7ef] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -102,10 +107,10 @@ const onSubmit = (values: z.infer<typeof OtpSchema>) => {
           <CardHeader className="space-y-6 text-center bg-gray-50 p-8">
             <div className="flex justify-center">
               <Image
-                src="/rota.png"
+                src="/logo.png"
                 alt="Rotary International"
-                width={100}
-                height={100}
+                width={200}
+                height={200}
                 priority
               />
             </div>

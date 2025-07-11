@@ -36,8 +36,9 @@ const registrationSchema = z.object({
     "District 9214",
     "Other"
   ]),
-  shirtSize: z.enum(["S", "M", "L", "XL", "2XL"]),
+  shirtSize: z.enum(["S", "M", "L", "XL", "2XL", "3XL", "4XL"]),
   dietaryRestrictions: z.enum(["Vegetarian", "Non Vegetarian"]),
+  special_medical_conditions: z.string().max(100).optional(),
   accommodation: z.enum(["Shared", "Single (with Extra Cost)"]),
 });
 
@@ -55,6 +56,7 @@ export default function RegistrationForm({ session }: RegistrationFormProps) {
       district: "District 9213",
       shirtSize: "M",
       dietaryRestrictions: "Non Vegetarian",
+      special_medical_conditions: "",
       accommodation: "Shared",
     },
   });
@@ -77,7 +79,7 @@ export default function RegistrationForm({ session }: RegistrationFormProps) {
       }
   
       toast.success('Registration successful!');
-      router.push('/registration/mine');
+      router.push('/registration');
     } catch (error) {
       toast.dismiss(); // Clear any existing toasts
       console.error('Registration error:', error);
@@ -106,7 +108,7 @@ export default function RegistrationForm({ session }: RegistrationFormProps) {
         <Card className="border-border">
           <CardHeader className="border-b border-border">
             <CardTitle className="text-2xl font-bold text-card-foreground">
-              REI 25 Registration for {session.user?.email}
+              REI 25 Registration for {session.user?.name}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
@@ -171,6 +173,43 @@ export default function RegistrationForm({ session }: RegistrationFormProps) {
                 <h3 className="text-lg font-semibold text-card-foreground pt-4">
                   CLUB INFORMATION
                 </h3>
+
+                 <FormField
+                  control={form.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Country</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Country" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="district"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Rotary District</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select district" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="District 9212">District 9212</SelectItem>
+                          <SelectItem value="District 9213">District 9213</SelectItem>
+                          <SelectItem value="District 9214">District 9214</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
                 <FormField
                   control={form.control}
@@ -180,20 +219,6 @@ export default function RegistrationForm({ session }: RegistrationFormProps) {
                       <FormLabel>Club Name</FormLabel>
                       <FormControl>
                         <Input placeholder="Rotaract Club of..." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="country"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Country</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Country" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -226,29 +251,6 @@ export default function RegistrationForm({ session }: RegistrationFormProps) {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="district"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Rotary District</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select district" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="District 9212">District 9212</SelectItem>
-                          <SelectItem value="District 9213">District 9213</SelectItem>
-                          <SelectItem value="District 9214">District 9214</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 {/* EVENT PREFERENCES SECTION */}
                 <h3 className="text-lg font-semibold text-card-foreground pt-4">
@@ -273,6 +275,8 @@ export default function RegistrationForm({ session }: RegistrationFormProps) {
                           <SelectItem value="L">L</SelectItem>
                           <SelectItem value="XL">XL</SelectItem>
                           <SelectItem value="2XL">2XL</SelectItem>
+                          <SelectItem value="3XL">3XL</SelectItem>
+                          <SelectItem value="4XL">4XL</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -297,6 +301,20 @@ export default function RegistrationForm({ session }: RegistrationFormProps) {
                           <SelectItem value="Non Vegetarian">Non Vegetarian</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                  <FormField
+                  control={form.control}
+                  name="special_medical_conditions"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Special Medical Conditions</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Allergies, Asthma..." {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

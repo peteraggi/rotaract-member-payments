@@ -17,6 +17,8 @@ interface RegistrationData {
     email: string;
     t_shirt_size?: string;
     dietary_needs?: string;
+    special_medical_conditions?: string;
+    accommodation?: string;
   };
   registration: {
     id: number;
@@ -49,9 +51,15 @@ interface PaymentDetails {
 //     <span>{message}</span>
 //   </div>
 // );
-const CustomToast = ({ message, type }: { message: string; type: 'success' | 'error' }) => (
+const CustomToast = ({
+  message,
+  type,
+}: {
+  message: string;
+  type: "success" | "error";
+}) => (
   <div className="flex items-start gap-2">
-    {type === 'success' ? (
+    {type === "success" ? (
       <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
     ) : (
       <XCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
@@ -60,20 +68,30 @@ const CustomToast = ({ message, type }: { message: string; type: 'success' | 'er
   </div>
 );
 
-
 export default function RegisteredView() {
   const [data, setData] = useState<RegistrationData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState<"mobileMoney" | "card">("mobileMoney");
+  const [paymentMethod, setPaymentMethod] = useState<"mobileMoney" | "card">(
+    "mobileMoney"
+  );
   const [phoneNumber, setPhoneNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [showCardPopup, setShowCardPopup] = useState(false);
   const router = useRouter();
-  const [paymentStatus, setPaymentStatus] = useState<"idle" | "processing" | "success" | "failed">("idle");
-  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
-  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<
+    "idle" | "processing" | "success" | "failed"
+  >("idle");
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(
+    null
+  );
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(
+    null
+  );
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  // const [amount, setAmount] = useState("");
+  const [feeAmount, setFeeAmount] = useState(0);
+  const [totalAmounts, setTotalAmounts] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -82,7 +100,7 @@ export default function RegisteredView() {
         if (!res.ok) throw new Error("Failed to fetch registration data");
 
         const json = await res.json();
-        
+
         if (!json.isRegistered || !json.user) {
           router.push("/registration");
           return;
@@ -97,6 +115,8 @@ export default function RegisteredView() {
             email: json.user.email,
             t_shirt_size: json.user.t_shirt_size,
             dietary_needs: json.user.dietary_needs,
+            special_medical_conditions: json.user.special_medical_conditions,
+            accommodation: json.user.accommodation,
           },
           registration: {
             id: json.registration.id,
@@ -108,14 +128,19 @@ export default function RegisteredView() {
         });
 
         if (json.user.phone_number) {
-          const formattedNumber = json.user.phone_number.startsWith('+') 
-            ? json.user.phone_number.slice(1) 
+          const formattedNumber = json.user.phone_number.startsWith("+")
+            ? json.user.phone_number.slice(1)
             : json.user.phone_number;
           setPhoneNumber(formattedNumber);
         }
       } catch (error) {
         console.error("Error fetching registration data:", error);
-        toast.error(<CustomToast message="Failed to load registration data" type="error" />);
+        toast.error(
+          <CustomToast
+            message="Failed to load registration data"
+            type="error"
+          />
+        );
         router.push("/registration");
       } finally {
         setLoading(false);
@@ -126,8 +151,10 @@ export default function RegisteredView() {
   }, [router]);
 
   const UgandaFlag = () => (
-  <span role="img" aria-label="Uganda">🇺🇬</span>
-);
+    <span role="img" aria-label="Uganda">
+      🇺🇬
+    </span>
+  );
 
   useEffect(() => {
     return () => {
@@ -140,31 +167,31 @@ export default function RegisteredView() {
       const response = await fetch(
         `/api/check-payment-status?internal_reference=${encodeURIComponent(internalReference)}`,
         {
-          method: 'GET',
+          method: "GET",
           headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
 
       const result = await response.json();
-      
+
       if (!response.ok) {
-        throw new Error(result.message || 'Status check failed');
+        throw new Error(result.message || "Status check failed");
       }
 
       return {
         success: result.success,
         status: result.status,
         message: result.message,
-        data: result.data
+        data: result.data,
       };
     } catch (error) {
-      console.error('Status check error:', error);
+      console.error("Status check error:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Status check failed'
+        message: error instanceof Error ? error.message : "Status check failed",
       };
     }
   };
@@ -176,30 +203,30 @@ export default function RegisteredView() {
     registrationId: number;
   }) => {
     try {
-      const response = await fetch('/api/save-payment', {
-        method: 'POST',
+      const response = await fetch("/api/save-payment", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify({
           userId: paymentData.userId,
           amount: paymentData.amount,
           transactionId: paymentData.transactionId,
-          paymentMethod: 'mobile_money',
-          registrationId: paymentData.registrationId
-        })
+          paymentMethod: "mobile_money",
+          registrationId: paymentData.registrationId,
+        }),
       });
 
       const result = await response.json();
-      
+
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to save payment record');
+        throw new Error(result.error || "Failed to save payment record");
       }
 
       return result;
     } catch (error) {
-      console.error('Save payment error:', error);
+      console.error("Save payment error:", error);
       throw error;
     }
   };
@@ -214,19 +241,19 @@ export default function RegisteredView() {
     transactionId: string;
   }) => {
     try {
-      const response = await fetch('/api/send-payment-email', {
-        method: 'POST',
+      const response = await fetch("/api/send-payment-email", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(paymentData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send confirmation email');
+        throw new Error("Failed to send confirmation email");
       }
     } catch (error) {
-      console.error('Email sending error:', error);
+      console.error("Email sending error:", error);
       throw error;
     }
   };
@@ -244,7 +271,9 @@ export default function RegisteredView() {
 
     const phoneRegex = /^256(77|78|70|75|76|74|39)\d{7}$/;
     if (!phoneRegex.test(phoneNumber)) {
-      toast.error("Please enter a valid MTN or Airtel Uganda number starting with 256");
+      toast.error(
+        "Please enter a valid MTN or Airtel Uganda number starting with 256"
+      );
       return;
     }
 
@@ -256,6 +285,20 @@ export default function RegisteredView() {
     setPaymentStatus("processing");
     setPaymentLoading(true);
 
+     const paymentTimeout = setTimeout(() => {
+    if (paymentStatus === "processing") {
+      setPaymentStatus("failed");
+      setPaymentLoading(false);
+      if (pollingInterval) clearInterval(pollingInterval);
+      toast.error(
+        <CustomToast 
+          message="Payment timed out. Please check your phone and try again." 
+          type="error" 
+        />
+      );
+    }
+  }, 20000); // 20 seconds
+
     try {
       const response = await fetch("/api/process-payment", {
         method: "POST",
@@ -264,13 +307,13 @@ export default function RegisteredView() {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify({
-          amount: Number(amount),
+          amount: Number(totalAmounts),
           phoneNumber: phoneNumber,
         }),
       });
 
       const result = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(result.message || "Payment failed");
       }
@@ -280,71 +323,86 @@ export default function RegisteredView() {
         customerReference: result.customerReference,
         provider: result.provider,
         amount: Number(amount),
-        msisdn: `+${phoneNumber}`
+        msisdn: `+${phoneNumber}`,
       });
 
-      toast.success(result.message || "Payment request sent. Please approve on your phone.");
+       await sendPaymentConfirmation({
+              email: data.user.email,
+              fullName: data.user.fullName,
+              amountPaid: Number(amount),
+              balance: data.registration.balance - Number(amount),
+              totalAmount: totalAmount,
+              paymentMethod: "Mobile Money",
+              transactionId: result.internalReference,
+            });
+
+      toast.success(
+        result.message || "Payment request sent. Please approve on your phone."
+      );
 
       const pollStatus = async () => {
         if (!result.internalReference) return;
-        
+
         const statusResult = await checkPaymentStatus(result.internalReference);
 
         if (!statusResult.success) {
           throw new Error(statusResult.message);
         }
 
-        if (statusResult.status === 'success') {
+        if (statusResult.status === "success") {
           clearInterval(interval);
-          
+
           // Save payment to database
           await savePaymentToDB({
             userId: data.user.user_id,
             amount: Number(amount),
             transactionId: result.internalReference,
-            registrationId: data.registration.id
+            registrationId: data.registration.id,
           });
 
           // Send payment confirmation email
-          await fetch('/api/send-payment-email', {
-            method: 'POST',
+          await fetch("/api/send-payment-email", {
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({
               email: data.user.email,
               fullName: data.user.fullName,
               amountPaid: Number(amount),
               balance: data.registration.balance - Number(amount),
-              totalAmount: data.registration.amount_paid + data.registration.balance,
-              paymentMethod: paymentMethod === 'mobileMoney' ? 'Mobile Money' : 'Credit/Debit Card',
-              transactionId: result.internalReference
+              totalAmount:
+                data.registration.amount_paid + data.registration.balance,
+              paymentMethod:
+                paymentMethod === "mobileMoney"
+                  ? "Mobile Money"
+                  : "Credit/Debit Card",
+              transactionId: result.internalReference,
             }),
           });
-      
 
-          setPaymentStatus('idle');
+          setPaymentStatus("idle");
           setPaymentLoading(false);
-          setPaymentDetails(prev => ({
+          setPaymentDetails((prev) => ({
             ...prev,
             providerTransactionId: statusResult.data.providerTransactionId,
-            completedAt: statusResult.data.completedAt
+            completedAt: statusResult.data.completedAt,
           }));
-          
+
           setShowSuccessPopup(true);
           toast.success("Payment confirmed and saved!");
           router.refresh();
-        } else if (statusResult.status === 'failed') {
+        } else if (statusResult.status === "failed") {
           clearInterval(interval);
-          setPaymentStatus('failed');
+          setPaymentStatus("failed");
           setPaymentLoading(false);
-          toast.error('Payment failed Please try again');
+          toast.error("Payment failed Please try again");
         }
       };
 
-      const interval = setInterval(pollStatus, 5000);
+      const interval = setInterval(pollStatus, 2000);
       setPollingInterval(interval);
-      setTimeout(pollStatus, 5000);
+      setTimeout(pollStatus, 2000);
 
       return () => clearInterval(interval);
     } catch (error) {
@@ -379,8 +437,12 @@ export default function RegisteredView() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary mx-auto"></div>
-            <p className="mt-4 text-lg font-medium text-white">Processing payment...</p>
-            <p className="text-gray-300 mt-2">Please approve the payment on your phone</p>
+            <p className="mt-4 text-lg font-medium text-white">
+              Processing payment...
+            </p>
+            <p className="text-gray-300 mt-2">
+              Please approve the payment on your phone
+            </p>
           </div>
         </div>
       )}
@@ -390,13 +452,27 @@ export default function RegisteredView() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="text-center max-w-md p-6 bg-white rounded-lg shadow-lg border">
             <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Payment Successful!</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">
+              Payment Successful!
+            </h3>
             <div className="text-left space-y-2 mb-6">
-              <p><span className="font-medium">Amount:</span> UGX {paymentDetails.amount?.toLocaleString()}</p>
-              <p><span className="font-medium">Provider:</span> {paymentDetails.provider?.replace('_', ' ')}</p>
-              <p><span className="font-medium">Phone:</span> {paymentDetails.msisdn}</p>
+              <p>
+                <span className="font-medium">Amount:</span> UGX{" "}
+                {paymentDetails.amount?.toLocaleString()}
+              </p>
+              <p>
+                <span className="font-medium">Provider:</span>{" "}
+                {paymentDetails.provider?.replace("_", " ")}
+              </p>
+              <p>
+                <span className="font-medium">Phone:</span>{" "}
+                {paymentDetails.msisdn}
+              </p>
               {paymentDetails.providerTransactionId && (
-                <p><span className="font-medium">Transaction ID:</span> {paymentDetails.providerTransactionId}</p>
+                <p>
+                  <span className="font-medium">Transaction ID:</span>{" "}
+                  {paymentDetails.providerTransactionId}
+                </p>
               )}
             </div>
             <Button
@@ -417,8 +493,13 @@ export default function RegisteredView() {
         <div className="fixed inset-0 bg-white/80 flex items-center justify-center z-50">
           <div className="text-center max-w-md p-6 bg-white rounded-lg shadow-lg border">
             <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Payment Failed</h3>
-            <p className="text-gray-600 mb-6">We couldn't process your payment. Please try again or contact support.</p>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">
+              Payment Failed
+            </h3>
+            <p className="text-gray-600 mb-6">
+              We couldn't process your payment. Please try again or contact
+              support.
+            </p>
             <div className="flex gap-3 w-full">
               <Button
                 onClick={() => setPaymentStatus("idle")}
@@ -428,7 +509,9 @@ export default function RegisteredView() {
                 Try Again
               </Button>
               <Button
-                onClick={() => window.location.href = "mailto:support@conference.org"}
+                onClick={() =>
+                  (window.location.href = "mailto:support@conference.org")
+                }
                 className="flex-1 bg-gray-900 hover:bg-gray-800"
               >
                 Contact Support
@@ -489,6 +572,22 @@ export default function RegisteredView() {
                           Dietary Needs:
                         </Label>
                         <p>{data.user.dietary_needs}</p>
+                      </div>
+                    )}
+                    {data.user.accommodation && (
+                      <div className="flex items-baseline gap-2">
+                        <Label className="text-gray-500 text-sm">
+                          Accommodation:
+                        </Label>
+                        <p>{data.user.accommodation}</p>
+                      </div>
+                    )}
+                    {data.user.special_medical_conditions && (
+                      <div className="flex items-baseline gap-2">
+                        <Label className="text-gray-500 text-sm">
+                          Special Medical Conditions:
+                        </Label>
+                        <p>{data.user.special_medical_conditions}</p>
                       </div>
                     )}
                   </CardContent>
@@ -571,7 +670,7 @@ export default function RegisteredView() {
                                     Mobile Money
                                   </Label>
                                   <p className="text-sm text-gray-500">
-                                  🇺🇬 Pay with MTN/Airtel Uganda
+                                    🇺🇬 Pay with MTN/Airtel Uganda
                                   </p>
                                 </div>
                               </div>
@@ -625,18 +724,61 @@ export default function RegisteredView() {
                               </div>
                               <div>
                                 <Label>Amount (UGX)</Label>
-                                <Input
-                                  type="text"
+                                <select
                                   value={amount}
-                                  onChange={(e) =>
-                                    setAmount(e.target.value)
-                                  }
-                                  className="mt-1 bg-white font-medium"
-                                />
+                                  onChange={(e) => {
+                                    const selectedAmount = e.target.value;
+                                    setAmount(selectedAmount);
+                                    // Calculate 3% fee
+                                    const fee = selectedAmount
+                                      ? Number(selectedAmount) * 0.03
+                                      : 0;
+                                    setFeeAmount(fee);
+                                    setTotalAmounts(
+                                      selectedAmount
+                                        ? Number(selectedAmount) + fee
+                                        : 0
+                                    );
+                                  }}
+                                  className="mt-1 bg-white font-medium w-full p-2 border rounded-md"
+                                >
+                                  <option value="">Select an amount</option>
+                                  <option value="500">500 UGX</option>
+                                  <option value="80000">80,000 UGX</option>
+                                  <option value="100000">100,000 UGX</option>
+                                  <option value="180000">180,000 UGX</option>
+                                </select>
                               </div>
+                              {amount && (
+                                <div className="space-y-2 pt-2">
+                                  <div className="flex justify-between">
+                                    <span className="text-sm text-gray-600">
+                                      Amount:
+                                    </span>
+                                    <span className="text-sm font-medium">
+                                      {parseFloat(amount).toLocaleString()} UGX
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-sm text-gray-600">
+                                      Fee (3%):
+                                    </span>
+                                    <span className="text-sm font-medium">
+                                      {feeAmount.toLocaleString()} UGX
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between border-t pt-2">
+                                    <span className="text-sm font-semibold">
+                                      Total:
+                                    </span>
+                                    <span className="text-sm font-semibold">
+                                      {totalAmounts.toLocaleString()} UGX
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
-
                           {paymentMethod === "card" && (
                             <div className="space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-100">
                               <div>
@@ -691,15 +833,19 @@ export default function RegisteredView() {
                               Processing...
                             </div>
                           ) : (
-                            `Pay UGX ${data.registration.balance.toLocaleString()}`
+                            "Pay Now"
                           )}
                         </Button>
                       </>
                     ) : (
                       <div className="text-center py-4">
                         <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2" />
-                        <p className="text-lg font-medium text-gray-800">Payment Complete</p>
-                        <p className="text-gray-600">Thank you for your payment!</p>
+                        <p className="text-lg font-medium text-gray-800">
+                          Payment Complete
+                        </p>
+                        <p className="text-gray-600">
+                          Thank you for your payment!
+                        </p>
                       </div>
                     )}
 
