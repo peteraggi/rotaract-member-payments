@@ -20,9 +20,16 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Mail } from "lucide-react";
+import { Mail, ChevronRight, X } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 // Form schema validation
 const FormSchema = z.object({
@@ -33,6 +40,8 @@ export default function Page() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showBanner, setShowBanner] = useState(true);
+  const [isPosterOpen, setIsPosterOpen] = useState(false);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -54,7 +63,7 @@ export default function Page() {
         if (!response.ok) {
           throw new Error(data.error || "Request failed");
         }
-        sessionStorage.setItem("authFlowStarted", "true");
+        document.cookie = `authFlow=1; path=/; max-age=${60 * 15}`; 
         if (data.exists) {
           router.push(`/login?email=${encodeURIComponent(values.email)}`);
         } else {
@@ -68,27 +77,23 @@ export default function Page() {
     });
   };
 
-  useEffect(() => {
-    if (sessionStorage.getItem("authFlowStarted")) {
-      router.push("/");
-    }
-
-    const handleBeforeUnload = () => {
-      sessionStorage.removeItem("authFlowStarted");
+ useEffect(() => {
+    window.history.pushState(null, '', window.location.href);
+    window.onpopstate = () => {
+      window.history.pushState(null, '', window.location.href);
     };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.onpopstate = null;
     };
-  }, [router]);
+  }, []);
 
   return (
     <div className="relative min-h-screen">
       {/* Background image with overlay */}
       <div className="fixed inset-0 -z-10 h-screen w-screen">
         <Image
-          src="/bg.jpg"
+          src="/rotaract-bg.jpg"
           alt="Background"
           fill
           className="object-cover"
@@ -98,8 +103,75 @@ export default function Page() {
         />
         <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
       </div>
-      {/* Content */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
+
+      {/* Event Date Banner */}
+      {showBanner && (
+        <div className="relative z-20">
+          <div className="flex items-center justify-center bg-[#2E8B57] px-4 py-3 sm:px-6 lg:px-8">
+            <div className="flex flex-wrap items-center justify-between w-full max-w-7xl gap-2">
+              <div className="flex items-center space-x-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-white"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <p className="text-sm font-medium text-white">
+                  <span className="hidden sm:inline">Rotaract Earth Initiative 2025 | </span>
+                  <span className="text-yellow-200 font-semibold">
+                    Save the Date: 24TH-26TH OCTOBER, 2025
+                  </span>
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Dialog open={isPosterOpen} onOpenChange={setIsPosterOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      className="bg-white text-[#1a365d] hover:bg-blue-50 font-medium"
+                    >
+                      View Event Poster
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                      <h3 className="text-lg font-medium">Rotaract Earth Initiative 2025</h3>
+                    </DialogHeader>
+                    <div className="relative aspect-[3/4] w-full">
+                      <Image
+                        src="/rotaract-bg.jpg"
+                        alt="Rotaract Earth Initiative 2025 Poster"
+                        fill
+                        className="object-contain rounded-lg"
+                        quality={100}
+                      />
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-white hover:bg-blue-600/20"
+                  onClick={() => setShowBanner(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="relative z-10 flex items-center justify-center min-h-screen p-4 pt-24">
         <div className="w-full max-w-md">
           <Card className="border border-gray-200 shadow-xl rounded-2xl overflow-hidden bg-white/90 backdrop-blur-sm">
             <CardHeader className="space-y-6 text-center bg-gray-50/80 p-8">

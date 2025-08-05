@@ -43,7 +43,7 @@ const myFont = localFont({
     ],
 })
 export const metadata: Metadata = {
-  title: "Rotaract Member Payments",
+  title: "Rotaract Member Registration",
   description: "REI #25 Registration || Rotary International || Rotaract Earth Initiative || Tree Planting Campaign 2025 || Bukedea District",
   icons: {
     icon: '/logo.png',

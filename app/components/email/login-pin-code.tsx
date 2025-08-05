@@ -94,7 +94,7 @@ const MagicLogin = ({ otp, fullName }: MagicLoginProps) => {
         <Container style={container}>
           <Section style={header}>
             <Img
-              src="https://firebasestorage.googleapis.com/v0/b/beacon-hostels.appspot.com/o/images%2Frota.png?alt=media&token=33d522ff-88b1-4096-a60a-b1f2665600e8" // Replace with actual logo URL
+              src="https://firebasestorage.googleapis.com/v0/b/beacon-hostels.appspot.com/o/images%2Flogo.png?alt=media&token=0981f32b-11b0-4d89-9df3-2b163a4a4d63" // Replace with actual logo URL
               width="120"
               height="auto"
               alt="Rotaract Earth Initiative Logo"
@@ -114,8 +114,8 @@ const MagicLogin = ({ otp, fullName }: MagicLoginProps) => {
           <Text style={paragraph}>
             If you encounter any issues, don't hesitate to reach out to our
             friendly support team at{" "}
-            <Link href="mailto:support@rotaract.com" style={link}>
-              support@rotaract.com
+            <Link href="mailto:info@scintl.co.ug" style={link}>
+              info@scintl.co.ug
             </Link>
             .
           </Text>
@@ -129,8 +129,8 @@ const MagicLogin = ({ otp, fullName }: MagicLoginProps) => {
             © {new Date().getFullYear()} Rotaract Earth Initiative. All rights
             reserved.
             <br />
-            <Link href="https://rotaract.com/" style={link}>
-              rotaract.com
+            <Link href="http://reiregistration.scintl.co.ug" style={link}>
+              Visit our reiregistration site here
             </Link>
           </Text>
         </Container>

@@ -72,14 +72,14 @@ export default function PaymentConfirmation({
           
           <Button
             style={button}
-            href="mailto:support@rei-conference.org"
+            href="mailto:markkimbz@gmail.com"
           >
             Contact Support
           </Button>
         </Row>
         <Row style={footer}>
           <Text style={footerText}>
-            REI Conference 2024
+            REI Conference 2025 | All rights reserved
           </Text>
         </Row>
       </Section>
