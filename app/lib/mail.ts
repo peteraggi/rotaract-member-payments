@@ -19,7 +19,7 @@ export const sendOtpcodeEmail = async (
   try {
     const emailHtml = await render(MagicLogin({ otp, fullName }));
     const mailOptions = {
-      from: `"REI Support" <info@scintl.com>`, // Sender name and email
+      from: `"REI Support" <rotaractearthinitiativeclub@gmail.com>`, // Sender name and email
       to: email,
       subject: "REI 25th Login One Time Pin",
       html: emailHtml, // Rendered email content

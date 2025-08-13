@@ -2,6 +2,15 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
+
+function sanitizeForJson(data: any): any {
+  return JSON.parse(JSON.stringify(data, (key, value) => 
+    typeof value === 'bigint' 
+      ? value.toString() 
+      : value
+  ));
+}
+
 export async function POST(request: Request) {
   try {
     const session = await auth();
@@ -42,11 +51,11 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json(sanitizeForJson({ 
       success: true,
       user,
       registration 
-    });
+    }));
     
   } catch (error) {
     console.error('Registration error:', error);

@@ -23,10 +23,22 @@ import { Input } from "@/components/ui/input";
 import { Mail, User } from "lucide-react";
 import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { validateNIN } from "@/lib/bou-utils";
 
 // Form schema validation
 const FormSchema = z.object({
   full_name: z.string().min(3, "Name must be at least 3 characters"),
+  phone_number: z.string().min(10, "Phone number must be at least 10 digits"),
+  date_of_birth: z.string().refine(val => !isNaN(Date.parse(val)), {
+    message: "Please enter a valid date",
+  }),
+  nin_number: z.string()
+    .min(14, "NIN must be 14 characters")
+    .max(14, "NIN must be 14 characters")
+    .refine(val => validateNIN(val), {
+      message: "Invalid NIN format. Correct format: CM/CF followed by 9 digits and a letter",
+    })
+    .optional(),
 });
 
 export default function AuthForm() {
@@ -42,6 +54,9 @@ export default function AuthForm() {
     resolver: zodResolver(FormSchema),
     defaultValues: {
       full_name: "",
+      phone_number: "",
+      date_of_birth: "",
+      nin_number: "",
     },
   });
 
@@ -56,6 +71,9 @@ export default function AuthForm() {
           body: JSON.stringify({
             email,
             fullName: values.full_name,
+            phone_number: values.phone_number,
+            date_of_birth: values.date_of_birth,
+            nin_number: values.nin_number,
           }),
         });
         const data = await response.json();
@@ -92,7 +110,7 @@ export default function AuthForm() {
             <div className="space-y-6">
               <p className="text-center text-gray-600 text-lg">
                 Oops! <strong>{email}</strong> doesn't seem to have an account.
-                Please tell us your fullname so we can create one.
+                Please tell us your details so we can create one.
               </p>
 
               <Form {...form}>
@@ -121,7 +139,60 @@ export default function AuthForm() {
                       </FormItem>
                     )}
                   />
-                  {submitError && (
+                 
+                  <FormField
+                    control={form.control}
+                    name="phone_number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="e.g. 256781234567"
+                            disabled={isPending}
+                            type="tel"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="date_of_birth"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Date of Birth</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="date"
+                            disabled={isPending}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="nin_number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>National ID Number (NIN)</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="CM914144440BJ4"
+                            disabled={isPending}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   {submitError && (
                     <p className="text-red-500 text-sm text-center">
                       {submitError}
                     </p>

@@ -135,12 +135,7 @@ export default function RegisteredView() {
         }
       } catch (error) {
         console.error("Error fetching registration data:", error);
-        toast.error(
-          <CustomToast
-            message="Failed to load registration data"
-            type="error"
-          />
-        );
+        toast.error("Failed to load registration data");
         router.push("/registration");
       } finally {
         setLoading(false);
@@ -285,19 +280,21 @@ export default function RegisteredView() {
     setPaymentStatus("processing");
     setPaymentLoading(true);
 
-     const paymentTimeout = setTimeout(() => {
-    if (paymentStatus === "processing") {
-      setPaymentStatus("failed");
-      setPaymentLoading(false);
-      if (pollingInterval) clearInterval(pollingInterval);
-      toast.error(
-        <CustomToast 
-          message="Payment timed out. Please check your phone and try again." 
-          type="error" 
-        />
-      );
-    }
-  }, 20000); // 20 seconds
+    const paymentTimeout = setTimeout(() => {
+      if (paymentStatus === "processing") {
+        setPaymentStatus("failed");
+        setPaymentLoading(false);
+        if (pollingInterval) clearInterval(pollingInterval);
+        toast.error(
+          <CustomToast
+            message="Payment timed out. Please check your phone and try again."
+            type="error"
+          />
+        );
+      }
+    }, 20000); // 20 seconds
+
+     const startTime = Date.now();
 
     try {
       const response = await fetch("/api/process-payment", {
@@ -330,65 +327,133 @@ export default function RegisteredView() {
         result.message || "Payment request sent. Please approve on your phone."
       );
 
-      const pollStatus = async () => {
-        if (!result.internalReference) return;
+      // const pollStatus = async () => {
+      //   if (!result.internalReference) return;
 
-        const statusResult = await checkPaymentStatus(result.internalReference);
+      //   const statusResult = await checkPaymentStatus(result.internalReference);
 
-        if (!statusResult.success) {
-          throw new Error(statusResult.message);
-        }
+      //   if (!statusResult.success) {
+      //     throw new Error(statusResult.message);
+      //   }
 
-        if (statusResult.status === "success") {
-          clearInterval(interval);
+      //   if (statusResult.status === "success") {
+      //     clearInterval(interval);
 
-          // Save payment to database
-          await savePaymentToDB({
-            userId: data.user.user_id,
-            amount: Number(amount),
-            transactionId: result.internalReference,
-            registrationId: data.registration.id,
-          });
+      //     // Save payment to database
+      //     await savePaymentToDB({
+      //       userId: data.user.user_id,
+      //       amount: Number(amount),
+      //       transactionId: result.internalReference,
+      //       registrationId: data.registration.id,
+      //     });
 
-          // Send payment confirmation email
-          await fetch("/api/send-payment-email", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              email: data.user.email,
-              fullName: data.user.fullName,
-              amountPaid: Number(amount),
-              balance: data.registration.balance - Number(amount),
-              totalAmount:
-                data.registration.amount_paid + data.registration.balance,
-              paymentMethod:
-                paymentMethod === "mobileMoney"
-                  ? "Mobile Money"
-                  : "Credit/Debit Card",
-              transactionId: result.internalReference,
-            }),
-          });
+      //     // Send payment confirmation email
+      //     await fetch("/api/send-payment-email", {
+      //       method: "POST",
+      //       headers: {
+      //         "Content-Type": "application/json",
+      //       },
+      //       body: JSON.stringify({
+      //         email: data.user.email,
+      //         fullName: data.user.fullName,
+      //         amountPaid: Number(amount),
+      //         balance: data.registration.balance - Number(amount),
+      //         totalAmount:
+      //           data.registration.amount_paid + data.registration.balance,
+      //         paymentMethod:
+      //           paymentMethod === "mobileMoney"
+      //             ? "Mobile Money"
+      //             : "Credit/Debit Card",
+      //         transactionId: result.internalReference,
+      //       }),
+      //     });
 
-          setPaymentStatus("idle");
-          setPaymentLoading(false);
-          setPaymentDetails((prev) => ({
-            ...prev,
-            providerTransactionId: statusResult.data.providerTransactionId,
-            completedAt: statusResult.data.completedAt,
-          }));
+      //     setPaymentStatus("idle");
+      //     setPaymentLoading(false);
+      //     setPaymentDetails((prev) => ({
+      //       ...prev,
+      //       providerTransactionId: statusResult.data.providerTransactionId,
+      //       completedAt: statusResult.data.completedAt,
+      //     }));
 
-          setShowSuccessPopup(true);
-          toast.success("Payment confirmed and saved!");
-          router.refresh();
-        } else if (statusResult.status === "failed") {
-          clearInterval(interval);
-          setPaymentStatus("failed");
-          setPaymentLoading(false);
-          toast.error("Payment failed Please try again");
-        }
-      };
+      //     setShowSuccessPopup(true);
+      //     toast.success("Payment confirmed and saved!");
+      //     router.refresh();
+      //   } else if (statusResult.status === "failed") {
+      //     clearInterval(interval);
+      //     setPaymentStatus("failed");
+      //     setPaymentLoading(false);
+      //     toast.error("Payment failed Please try again");
+      //   }
+      // };
+
+const pollStatus = async () => {
+  if (!result.internalReference) return;
+
+  // Get current time and calculate if 4 minutes have passed
+  const currentTime = Date.now();
+  const timeElapsed = (currentTime - startTime) / 1000; // Convert to seconds
+
+  // If 4 minutes (240 seconds) have passed, stop polling and mark as failed
+  if (timeElapsed >= 240) {
+    clearInterval(interval);
+    setPaymentStatus("failed");
+    setPaymentLoading(false);
+    toast.error("Payment timed out after 4 minutes. Please try again.");
+    return;
+  }
+
+  // Otherwise, check payment status
+  const statusResult = await checkPaymentStatus(result.internalReference);
+
+  if (!statusResult.success) {
+    throw new Error(statusResult.message);
+  }
+
+  if (statusResult.status === "success") {
+    clearInterval(interval);
+
+    // Save payment to DB
+    await savePaymentToDB({
+      userId: data.user.user_id,
+      amount: Number(amount),
+      transactionId: result.internalReference,
+      registrationId: data.registration.id,
+    });
+
+    // Send confirmation email
+    await fetch("/api/send-payment-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: data.user.email,
+        fullName: data.user.fullName,
+        amountPaid: Number(amount),
+        balance: data.registration.balance - Number(amount),
+        totalAmount: data.registration.amount_paid + data.registration.balance,
+        paymentMethod: paymentMethod === "mobileMoney" ? "Mobile Money" : "Credit/Debit Card",
+        transactionId: result.internalReference,
+      }),
+    });
+
+    setPaymentStatus("idle");
+    setPaymentLoading(false);
+    setPaymentDetails((prev) => ({
+      ...prev,
+      providerTransactionId: statusResult.data.providerTransactionId,
+      completedAt: statusResult.data.completedAt,
+    }));
+
+    setShowSuccessPopup(true);
+    toast.success("Payment confirmed and saved!");
+    router.refresh();
+  } else if (statusResult.status === "failed") {
+    clearInterval(interval);
+    setPaymentStatus("failed");
+    setPaymentLoading(false);
+    toast.error("Payment failed. Please try again.");
+  }
+};
 
       const interval = setInterval(pollStatus, 2000);
       setPollingInterval(interval);
@@ -516,7 +581,7 @@ export default function RegisteredView() {
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
               {data.registration.registration_status === "registered"
-                ? "Registration Details"
+                ? "REI25 Registration Details"
                 : "Pending Registration"}
             </h2>
 
@@ -593,37 +658,27 @@ export default function RegisteredView() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-6 space-y-6">
+                    {/* Payment Summary */}
                     <div className="space-y-4">
                       <div className="flex items-baseline gap-2">
                         <Label className="text-gray-500 text-sm">Status:</Label>
-                        <p
-                          className={`font-medium ${
-                            data.registration.payment_status === "pending"
-                              ? "text-orange-500"
-                              : "text-green-500"
-                          }`}
-                        >
+                        <p className={`font-medium ${data.registration.payment_status === "pending"
+                          ? "text-orange-500"
+                          : "text-green-500"
+                          }`}>
                           {data.registration.payment_status.toUpperCase()}
                         </p>
                       </div>
                       <div className="flex items-baseline gap-2">
-                        <Label className="text-gray-500 text-sm">
-                          Amount Paid:
-                        </Label>
-                        <p>
-                          UGX {data.registration.amount_paid.toLocaleString()}
-                        </p>
+                        <Label className="text-gray-500 text-sm">Amount Paid:</Label>
+                        <p>UGX {data.registration.amount_paid.toLocaleString()}</p>
                       </div>
                       <div className="flex items-baseline gap-2">
-                        <Label className="text-gray-500 text-sm">
-                          Total Amount:
-                        </Label>
+                        <Label className="text-gray-500 text-sm">Total Amount:</Label>
                         <p>UGX {totalAmount.toLocaleString()}</p>
                       </div>
                       <div className="flex items-baseline gap-2">
-                        <Label className="text-gray-500 text-sm">
-                          Balance:
-                        </Label>
+                        <Label className="text-gray-500 text-sm">Balance:</Label>
                         <p className="font-medium">
                           UGX {data.registration.balance.toLocaleString()}
                         </p>
@@ -633,189 +688,98 @@ export default function RegisteredView() {
                     {data.registration.balance > 0 ? (
                       <>
                         <div className="space-y-4">
-                          <div className="flex flex-col sm:flex-row gap-3">
-                            <button
-                              type="button"
-                              onClick={() => setPaymentMethod("mobileMoney")}
-                              className={`flex-1 p-4 border rounded-lg text-left transition-colors ${
-                                paymentMethod === "mobileMoney"
-                                  ? "border-blue-500 bg-white shadow-sm"
-                                  : "border-gray-200 bg-white hover:border-gray-300"
-                              }`}
-                            >
-                              <div className="flex items-center space-x-3">
-                                <div
-                                  className={`h-5 w-5 rounded-full border flex items-center justify-center ${
-                                    paymentMethod === "mobileMoney"
-                                      ? "border-blue-500 bg-blue-500"
-                                      : "border-gray-300"
-                                  }`}
-                                >
-                                  {paymentMethod === "mobileMoney" && (
-                                    <div className="h-2 w-2 rounded-full bg-white"></div>
-                                  )}
+                          {/* Mobile Money Payment Card */}
+                          <div className={`p-4 border rounded-lg text-left transition-colors bg-white shadow-sm`}>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:space-x-3">
+                              <div className="h-5 w-5 rounded-full border border-gray-300 flex items-center justify-center bg-white flex-shrink-0">
+                                <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                              </div>
+
+                              <div className="flex flex-col xs:flex-row items-start xs:items-center gap-2 sm:gap-3">
+                                <div className="flex items-center gap-2">
+                                  <img
+                                    src="/mtn-logo.svg"
+                                    alt="MTN"
+                                    className="h-8 sm:h-10 object-contain"
+                                  />
+                                  <img
+                                    src="/airtel-logo.png"
+                                    alt="Airtel"
+                                    className="h-9 sm:h-11 object-contain"
+                                  />
                                 </div>
-                                <div>
-                                  <Label className="font-medium">
-                                    Mobile Money
-                                  </Label>
-                                  <p className="text-sm text-gray-500">
-                                    🇺🇬 Pay with MTN/Airtel Uganda
+
+                                <div className="xs:ml-2">
+                                  <Label className="font-medium text-base sm:text-inherit">Mobile Money</Label>
+                                  <p className="text-sm text-gray-500 mt-0.5 sm:mt-0">
+                                    Pay with MTN MoMo or Airtel Money
                                   </p>
                                 </div>
                               </div>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPaymentMethod("card")}
-                              className={`flex-1 p-4 border rounded-lg text-left transition-colors ${
-                                paymentMethod === "card"
-                                  ? "border-blue-500 bg-white shadow-sm"
-                                  : "border-gray-200 bg-white hover:border-gray-300"
-                              }`}
-                            >
-                              <div className="flex items-center space-x-3">
-                                <div
-                                  className={`h-5 w-5 rounded-full border flex items-center justify-center ${
-                                    paymentMethod === "card"
-                                      ? "border-blue-500 bg-blue-500"
-                                      : "border-gray-300"
-                                  }`}
-                                >
-                                  {paymentMethod === "card" && (
-                                    <div className="h-2 w-2 rounded-full bg-white"></div>
-                                  )}
-                                </div>
-                                <div>
-                                  <Label className="font-medium">
-                                    Credit/Debit Card
-                                  </Label>
-                                  <p className="text-sm text-gray-500">
-                                    Pay with Visa, Mastercard, etc.
-                                  </p>
-                                </div>
-                              </div>
-                            </button>
+                            </div>
                           </div>
 
-                          {paymentMethod === "mobileMoney" && (
-                            <div className="space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-100">
-                              <div>
-                                <Label>Telephone Number (MTN/Airtel UG)</Label>
-                                <Input
-                                  type="tel"
-                                  placeholder="e.g. 785721293"
-                                  value={phoneNumber}
-                                  onChange={(e) =>
-                                    setPhoneNumber(e.target.value)
-                                  }
-                                  className="mt-1 bg-white"
-                                />
-                              </div>
-                              <div>
-                                <Label>Amount (UGX)</Label>
-                                <select
-                                  value={amount}
-                                  onChange={(e) => {
-                                    const selectedAmount = e.target.value;
-                                    setAmount(selectedAmount);
-                                    // Calculate 3% fee
-                                    const fee = selectedAmount
-                                      ? Number(selectedAmount) * 0.03
-                                      : 0;
-                                    setFeeAmount(fee);
-                                    setTotalAmounts(
-                                      selectedAmount
-                                        ? Number(selectedAmount) + fee
-                                        : 0
-                                    );
-                                  }}
-                                  className="mt-1 bg-white font-medium w-full p-2 border rounded-md"
-                                >
-                                  <option value="">Select an amount</option>
-                                  <option value="500">500 UGX</option>
-                                  <option value="80000">80,000 UGX</option>
-                                  <option value="100000">100,000 UGX</option>
-                                  <option value="180000">180,000 UGX</option>
-                                </select>
-                              </div>
-                              {amount && (
-                                <div className="space-y-2 pt-2">
-                                  <div className="flex justify-between">
-                                    <span className="text-sm text-gray-600">
-                                      Amount:
-                                    </span>
-                                    <span className="text-sm font-medium">
-                                      {parseFloat(amount).toLocaleString()} UGX
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-sm text-gray-600">
-                                      Fee (3%):
-                                    </span>
-                                    <span className="text-sm font-medium">
-                                      {feeAmount.toLocaleString()} UGX
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between border-t pt-2">
-                                    <span className="text-sm font-semibold">
-                                      Total:
-                                    </span>
-                                    <span className="text-sm font-semibold">
-                                      {totalAmounts.toLocaleString()} UGX
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
+                          {/* Payment Form */}
+                          <div className="space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-100">
+                            <div>
+                              <Label>Telephone Number (Pay With MTN or Airtel UG)</Label>
+                              <Input
+                                type="tel"
+                                placeholder="e.g. 785721293 or 775721293"
+                                value={phoneNumber}
+                                onChange={(e) => setPhoneNumber(e.target.value)}
+                                className="mt-1 bg-white"
+                              />
                             </div>
-                          )}
-                          {paymentMethod === "card" && (
-                            <div className="space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-100">
-                              <div>
-                                <Label>Card Number</Label>
-                                <Input
-                                  type="text"
-                                  placeholder="4242 4242 4242 4242"
-                                  className="mt-1 bg-white"
-                                />
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <Label>Expiry Date</Label>
-                                  <Input
-                                    type="text"
-                                    placeholder="MM/YY"
-                                    className="mt-1 bg-white"
-                                  />
-                                </div>
-                                <div>
-                                  <Label>CVV</Label>
-                                  <Input
-                                    type="text"
-                                    placeholder="123"
-                                    className="mt-1 bg-white"
-                                  />
-                                </div>
-                              </div>
-                              <div>
-                                <Label>Amount (UGX)</Label>
-                                <Input
-                                  type="text"
-                                  value={data.registration.balance.toLocaleString()}
-                                  readOnly
-                                  className="mt-1 bg-white font-medium"
-                                />
-                              </div>
+                            <div>
+                              <Label>Amount (UGX)</Label>
+                              <select
+                                value={amount}
+                                onChange={(e) => {
+                                  const selectedAmount = e.target.value;
+                                  setAmount(selectedAmount);
+                                  const fee = selectedAmount ? Number(selectedAmount) * 0.03 : 0;
+                                  setFeeAmount(fee);
+                                  setTotalAmounts(selectedAmount ? Number(selectedAmount) + fee : 0);
+                                }}
+                                className="mt-1 bg-white font-medium w-full p-2 border rounded-md"
+                              >
+                                <option value="">Select an amount</option>
+                                <option value="500">500 UGX</option>
+                                <option value="80000">80,000 UGX</option>
+                                <option value="100000">100,000 UGX</option>
+                                <option value="180000">180,000 UGX</option>
+                              </select>
                             </div>
-                          )}
+                            {amount && (
+                              <div className="space-y-2 pt-2">
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-gray-600">Amount:</span>
+                                  <span className="text-sm font-medium">
+                                    {parseFloat(amount).toLocaleString()} UGX
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-gray-600">Fee (3%):</span>
+                                  <span className="text-sm font-medium">
+                                    {feeAmount.toLocaleString()} UGX
+                                  </span>
+                                </div>
+                                <div className="flex justify-between border-t pt-2">
+                                  <span className="text-sm font-semibold">Total:</span>
+                                  <span className="text-sm font-semibold">
+                                    {totalAmounts.toLocaleString()} UGX
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         <Button
                           onClick={handlePayment}
                           className="w-full bg-gray-900 hover:bg-blue-700 py-6 text-lg"
-                          disabled={
-                            paymentLoading || paymentStatus === "processing"
-                          }
+                          disabled={paymentLoading || paymentStatus === "processing"}
                         >
                           {paymentLoading || paymentStatus === "processing" ? (
                             <div className="flex items-center gap-2">

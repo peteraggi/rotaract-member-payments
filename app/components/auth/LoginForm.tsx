@@ -44,14 +44,29 @@ export default function LoginForm() {
     },
   });
 
-  const handleResendOTP = async () => {
-    try {
-      await fetch('/api/resend-otp', { method: 'POST', body: JSON.stringify({ email }) });
-      toast.success("New PIN sent!");
-    } catch (error) {
-      toast.error("Failed to resend PIN");
+ const handleResendOTP = async () => {
+  try {
+    const response = await fetch('/api/resend-otp', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to resend PIN");
     }
-  };
+
+    toast.success(data.message || "New PIN sent!");
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Failed to resend PIN";
+    toast.error(errorMessage);
+  }
+};
+
  const onSubmit = (values: z.infer<typeof OtpSchema>) => {
     startTransition(async () => {
       try {
@@ -179,9 +194,8 @@ export default function LoginForm() {
               <button 
                 type="button" 
                 className="text-blue-600 hover:underline"
-                onClick={() => {
-                  // Implement resend OTP logic here
-                }}
+                onClick={handleResendOTP}
+                disabled={isPending}
               >
                 Resend PIN
               </button>

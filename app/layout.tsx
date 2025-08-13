@@ -44,7 +44,7 @@ const myFont = localFont({
 })
 export const metadata: Metadata = {
   title: "Rotaract Member Registration",
-  description: "REI #25 Registration || Rotary International || Rotaract Earth Initiative || Tree Planting Campaign 2025 || Bukedea District",
+  description: "REI #25 Registration || Rotary International || Rotaract Earth Initiative || Tree Planting Campaign 2025 || Mt Elgon",
   icons: {
     icon: '/logo.png',
   },

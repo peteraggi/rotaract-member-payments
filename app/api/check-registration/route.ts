@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { safeBigIntToJSON } from '@/lib/bou-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,11 +18,11 @@ export async function GET() {
       include: { user: true }
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json(safeBigIntToJSON({ 
       isRegistered: !!registration,
       registration,
       user: registration?.user
-    });
+    }));
     
   } catch (error) {
     console.error('Registration check error:', error);

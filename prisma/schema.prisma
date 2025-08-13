@@ -31,6 +31,17 @@ model User {
   otpExpiresAt    DateTime? // OTP expiration timestamp
   created_at      DateTime        @default(now())
   updated_at      DateTime        @updatedAt
+
+  // Bank of Uganda required fields
+  reference_number      String?       @unique @db.VarChar(30)
+  system_unique_id      String?       @unique @db.VarChar(64)
+  operation_type        Int?          @default(0) // 0 for new, 1 for update
+  transaction_timestamp BigInt?       // Unix timestamp in milliseconds
+  account_id            String?       @db.VarChar(20) // Phone number
+  account_category_code String?       @db.VarChar(5)
+  nin_number            String?      @db.VarChar(20)
+  date_of_birth         BigInt?      // Unix timestamp in milliseconds
+  account_status        Int?          @default(0) // 0-Active, 1-Inactive, 2-Suspended
   
   // Back-relations for ease of querying
   registrations   Registration[]
@@ -79,4 +90,12 @@ model Payment {
   @@index([user_id])
   @@index([transaction_id])
   @@map("payment")
+}
+
+model DailyTransactionCounter {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @unique @default(now())
+  counter   Int      @default(1)
+  
+  @@map("daily_transaction_counter")
 }
