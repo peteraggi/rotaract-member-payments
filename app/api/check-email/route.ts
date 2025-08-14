@@ -13,6 +13,7 @@ const CheckEmailSchema = z.object({
   email: z.string().email("Invalid email format"),
 });
 
+// This route checks if an email exists in the database and sends an OTP if it does
 export async function POST(req: Request) {
   try {
     const body = await req.json();
