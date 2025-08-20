@@ -4,6 +4,7 @@ import localFont from 'next/font/local'
 import { cn } from "@/lib/utils";
 // import AuthProvider from "../context/AuthProvider";
 import { Toaster } from "react-hot-toast";
+import { SessionProvider } from "next-auth/react";
 
 const myFont = localFont({
     src: [
@@ -62,7 +63,9 @@ export default async function RootLayout({
         className={cn(myFont.className)}
       >
         <Toaster position="top-center" reverseOrder={false} />
+        <SessionProvider>
         {children}
+        </SessionProvider>
       </body>
     </html>
   );

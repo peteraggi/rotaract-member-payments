@@ -101,7 +101,7 @@ export function Sidebar({ session, isAdmin }: {
             <>
               <Loader2 className="mr-3 h-5 w-5 animate-spin" />
               <span className="text-sm md:text-base">Signing Out...</span>
-            </>
+            </> 
           ) : (
             <>
               <LogOut className="mr-3 h-5 w-5" />

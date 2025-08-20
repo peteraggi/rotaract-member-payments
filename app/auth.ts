@@ -101,6 +101,21 @@
 
 
 // auth.ts
+
+const ADMINS = [
+  {
+    email: 'aggi@scintl.co.ug',
+    name: 'Mark Kimbugwe',
+    phone: '0703634786',
+    role: 'requester'
+  },
+  {
+    email: 'alebarkm@gmail.com',
+    name: 'Alebar Kanyonza',
+    phone: '+256778107764',
+    role: 'approver'
+  }
+];
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaClient } from "@prisma/client";
 import NextAuth from "next-auth";
@@ -118,12 +133,14 @@ interface User extends AuthUser {
   created_at: Date;
   updated_at: Date;
   isAdmin?: boolean;
+  adminRole?: string;
 }
 
 const prisma = new PrismaClient();
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'aggi@scintl.co.ug';
 const ADMIN_PIN = process.env.ADMIN_PIN || '123456'; 
+
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -141,9 +158,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         }
 
         // Check if this is an admin login attempt
-        const isAdminLogin = credentials.email === ADMIN_EMAIL;
+        // const isAdminLogin = credentials.email === ADMIN_EMAIL;
+         const admin = ADMINS.find(a => a.email === credentials.email);
 
-        if (isAdminLogin) {
+        if (admin) {
           // Admin login flow
           if (credentials.pinCode !== ADMIN_PIN) {
             throw new Error("Invalid admin PIN");
@@ -151,10 +169,12 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
           // Return admin user object
           return {
-            id: 'admin-1', // Special ID for admin
-            email: ADMIN_EMAIL,
-            name: "Rotaract Admin",
+            id: `admin-${admin.email}`,
+            email: admin.email,
+            name: admin.name,
+            phone_number: admin.phone,
             isAdmin: true,
+            adminRole: admin.role,
             user_id: 0, // Special ID for admin
             created_at: new Date(),
             updated_at: new Date(),
@@ -205,6 +225,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         session.user.district = token.district as string | null;
         session.user.t_shirt_size = token.t_shirt_size as string | null;
         session.user.isAdmin = token.isAdmin as boolean;
+        session.user.adminRole = token.adminRole as string;
       }
       return session;
     },
@@ -218,6 +239,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         token.t_shirt_size = user.t_shirt_size;
         token.isAdmin = user.isAdmin;
         token.hasCompletedProfile = Boolean(user.club_name && user.district);
+        token.adminRole = user.adminRole;
       }
       return token;
     },

@@ -30,6 +30,7 @@ import {
   DialogHeader,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useSession } from "next-auth/react";
 
 // Form schema validation
 const FormSchema = z.object({
@@ -37,6 +38,7 @@ const FormSchema = z.object({
 });
 
 export default function Page() {
+   const { data: session, status } = useSession();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -77,16 +79,15 @@ export default function Page() {
     });
   };
 
- useEffect(() => {
-    window.history.pushState(null, '', window.location.href);
-    window.onpopstate = () => {
-      window.history.pushState(null, '', window.location.href);
-    };
-
-    return () => {
-      window.onpopstate = null;
-    };
-  }, []);
+useEffect(() => {
+    if (status === "authenticated") {
+      if (session?.user?.isAdmin) {
+        router.push("/admin");
+      } else {
+        router.push("/registration");
+      }
+    }
+  }, [status, session, router]);
 
   return (
     <div className="relative min-h-screen">

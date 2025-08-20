@@ -1,12 +1,25 @@
-
 // app/api/check-email/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { sendOtpcodeEmail } from "@/lib/mail";
 
-// Hardcoded admin credentials
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'aggi@scintl.co.ug';
+// Admin credentials
+const ADMINS = [
+  {
+    email: 'aggi@scintl.co.ug',
+    name: 'Mark Kimbugwe',
+    phone: '0703634786',
+    role: 'requester'
+  },
+  {
+    email: 'alebarkm@gmail.com',
+    name: 'Alebar Kanyonza',
+    phone: '+256778107764',
+    role: 'approver'
+  }
+];
+
 const ADMIN_PIN = process.env.ADMIN_PIN || '123456';
 
 const CheckEmailSchema = z.object({
@@ -27,14 +40,19 @@ export async function POST(req: Request) {
 
     const { email } = parsed.data;
 
-    if (email === ADMIN_EMAIL) {
-      console.log(`Admin login attempt for ${email}`);
+    // Check if email belongs to any admin
+    const admin = ADMINS.find(admin => admin.email.toLowerCase() === email.toLowerCase());
+    
+    if (admin) {
+      console.log(`Admin login attempt for ${email} (${admin.name})`);
       console.log(`Admin PIN: ${ADMIN_PIN}`);
-      await sendOtpcodeEmail(email, ADMIN_PIN, "Admin User");
+      await sendOtpcodeEmail(email, ADMIN_PIN, admin.name);
       
       return NextResponse.json({
         status: true,
         exists: true,
+        isAdmin: true,
+        adminRole: admin.role,
         message: "Admin PIN sent to your email",
       });
     }
@@ -55,12 +73,14 @@ export async function POST(req: Request) {
       return NextResponse.json({
         status: true,
         exists: true,
+        isAdmin: false,
         message: "OTP sent to your email",
       });
     } else {
       return NextResponse.json({
         status: true,
         exists: false,
+        isAdmin: false,
         message: "Email not found",
       });
     }

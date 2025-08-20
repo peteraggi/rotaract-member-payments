@@ -14,6 +14,15 @@ export async function GET() {
             fullName: true,
             email: true,
             club_name: true,
+            gender: true,
+            country: true,
+            district: true,
+            designation: true,
+            t_shirt_size: true,
+            dietary_needs: true,
+            special_medical_conditions: true,
+            accommodation: true,
+            phone_number: true
           },
         },
       },
@@ -27,7 +36,19 @@ export async function GET() {
       amount_paid: reg.amount_paid,
       balance: reg.balance,
       payment_status: reg.payment_status,
-    }));
+      gender: reg.user.gender,
+      country: reg.user.country,
+      district: reg.user.district,
+      designation: reg.user.designation,
+      t_shirt_size: reg.user.t_shirt_size,
+      dietary_needs: reg.user.dietary_needs,
+      special_medical_conditions: reg.user.special_medical_conditions,
+      accommodation: reg.user.accommodation,
+      registration_status: reg.registration_status,
+      phone_number: reg.user.phone_number,
+
+      
+    })); 
 
     return NextResponse.json(reports);
   } catch (error) {

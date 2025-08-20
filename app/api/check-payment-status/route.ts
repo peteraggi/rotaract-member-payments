@@ -1,8 +1,7 @@
-// app/api/check-payment-status/route.ts
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 
-const RELWORX_API_ENDPOINT = 'https://payments.relworx.com/api/mobile-money';
+const PROXY_API_ENDPOINT = process.env.PROXY_API_ENDPOINT || 'http://161.35.39.124:3001/api';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -31,13 +30,13 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Forward the request to our proxy API
     const response = await fetch(
-      `${RELWORX_API_ENDPOINT}/check-request-status?internal_reference=${internalReference}&account_no=${process.env.RELWORX_ACCOUNT_NO}`,
+      `${PROXY_API_ENDPOINT}/check-payment-status?internal_reference=${encodeURIComponent(internalReference)}`,
       {
         method: 'GET',
         headers: {
-          'Accept': 'application/vnd.relworx.v2',
-          'Authorization': `Bearer ${process.env.RELWORX_API_KEY}`
+          'Authorization': `Bearer ${authToken}`
         }
       }
     );
@@ -48,30 +47,15 @@ export async function GET(request: Request) {
       return NextResponse.json(
         { 
           success: false,
-          error: result.error_code || 'STATUS_CHECK_FAILED',
+          error: result.error || 'STATUS_CHECK_FAILED',
           message: result.message || 'Failed to check payment status',
           details: result
         },
-        { status: 400 }
+        { status: response.status }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      status: result.request_status, // "pending", "success", or "failed"
-      message: result.message,
-      data: {
-        customerReference: result.customer_reference,
-        internalReference: result.internal_reference,
-        msisdn: result.msisdn,
-        amount: result.amount,
-        currency: result.currency,
-        provider: result.provider,
-        charge: result.charge,
-        providerTransactionId: result.provider_transaction_id,
-        completedAt: result.completed_at
-      }
-    });
+    return NextResponse.json(result);
 
   } catch (error) {
     console.error('Status check error:', error);

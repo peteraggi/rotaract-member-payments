@@ -191,40 +191,49 @@ export default function RegisteredView() {
     }
   };
 
-  const savePaymentToDB = async (paymentData: {
-    userId: number;
-    amount: number;
-    transactionId: string;
-    registrationId: number;
-  }) => {
-    try {
-      const response = await fetch("/api/save-payment", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          userId: paymentData.userId,
-          amount: paymentData.amount,
-          transactionId: paymentData.transactionId,
-          paymentMethod: "mobile_money",
-          registrationId: paymentData.registrationId,
-        }),
-      });
+const savePaymentToDB = async (paymentData: {
+  userId: number;
+  amount: number;
+  transactionId: string;
+  registrationId: number;
+  phoneNumber?: string;
+}) => {
+  try {
+    console.log('Saving payment with data:', paymentData);
+    
+    const response = await fetch("/api/save-payment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({
+        userId: paymentData.userId,
+        amount: paymentData.amount,
+        transactionId: paymentData.transactionId,
+        paymentMethod: "mobile_money",
+        registrationId: paymentData.registrationId,
+        phoneNumber: paymentData.phoneNumber,
+      }),
+    });
 
-      const result = await response.json();
+    const result = await response.json();
+    console.log('Save payment response:', result);
 
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to save payment record");
-      }
-
-      return result;
-    } catch (error) {
-      console.error("Save payment error:", error);
-      throw error;
+    if (!response.ok) {
+      // Handle the correct error format - use result.message instead of result.error
+      const errorMessage = result.message || result.error || "Failed to save payment record";
+      console.error("Save payment error details:", result);
+      throw new Error(errorMessage);
     }
-  };
+
+    console.log('Payment saved successfully:', result);
+    return result;
+  } catch (error) {
+    console.error("Save payment error:", error);
+    throw error;
+  }
+};
 
   const sendPaymentConfirmation = async (paymentData: {
     email: string;
@@ -419,6 +428,7 @@ const pollStatus = async () => {
       amount: Number(amount),
       transactionId: result.internalReference,
       registrationId: data.registration.id,
+      phoneNumber: phoneNumber,
     });
 
     // Send confirmation email
@@ -710,7 +720,7 @@ const pollStatus = async () => {
                                 </div>
 
                                 <div className="xs:ml-2">
-                                  <Label className="font-medium text-base sm:text-inherit">Mobile Money</Label>
+                                  <Label className="font-medium text-base sm:text-inherit">Mobile Money & Airtel Money</Label>
                                   <p className="text-sm text-gray-500 mt-0.5 sm:mt-0">
                                     Pay with MTN MoMo or Airtel Money
                                   </p>
@@ -745,9 +755,10 @@ const pollStatus = async () => {
                                 className="mt-1 bg-white font-medium w-full p-2 border rounded-md"
                               >
                                 <option value="">Select an amount</option>
-                                <option value="80000">80,000 UGX</option>
+                                 <option value="500">500 UGX</option>
+                                <option value="80000">50,000 UGX</option>
                                 <option value="100000">100,000 UGX</option>
-                                <option value="180000">180,000 UGX</option>
+                                <option value="180000">200,000 UGX</option>
                               </select>
                             </div>
                             {amount && (

@@ -17,8 +17,19 @@ interface PaymentReport {
   email: string;
   club_name: string;
   amount_paid: number;
+  gender: string;
   balance: number;
+  designation: string;
+  t_shirt_size: string; 
+  dietary_needs: string;
+  special_medical_conditions: string;
+  accommodation: string;
+  registration_status: string;
+  phone_number: string;
+  district: string;
+  country: string;
   payment_status: string;
+
 }
 
 export default function ReportsPage({ session }: { session: any }) {
@@ -26,7 +37,7 @@ export default function ReportsPage({ session }: { session: any }) {
   const [reports, setReports] = useState<PaymentReport[]>([]);
   const [filteredReports, setFilteredReports] = useState<PaymentReport[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | '80000' | '100000' | 'fully'>('all');
+  const [filter, setFilter] = useState<'all' | '50000' | '150000' | 'fully'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
 
@@ -59,11 +70,11 @@ export default function ReportsPage({ session }: { session: any }) {
   useEffect(() => {
     let filtered = [...reports];
     switch (filter) {
-      case '80000':
-        filtered = reports.filter(report => report.amount_paid === 80000);
+      case '50000':
+        filtered = reports.filter(report => report.amount_paid === 50000);
         break;
-      case '100000':
-        filtered = reports.filter(report => report.amount_paid === 100000);
+      case '150000':
+        filtered = reports.filter(report => report.amount_paid === 200000);
         break;
       case 'fully':
         filtered = reports.filter(report => report.balance === 0);
@@ -116,101 +127,154 @@ export default function ReportsPage({ session }: { session: any }) {
     }
   };
 
-  const generatePDF = async () => {
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
+const generatePDF = async () => {
+  const doc = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  // A4 Landscape dimensions: 297mm (width) x 210mm (height)
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 10;
+  const tableWidth = pageWidth - (margin * 2);
+
+  // Centered logo with your exact specifications
+  try {
+    const logoUrl = '/logo.png';
+    const logoResponse = await fetch(logoUrl);
+    const logoBlob = await logoResponse.blob();
+    const logoDataUrl = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(logoBlob);
     });
     
-    try {
-      const logoUrl = '/logo.png';
-      const logoResponse = await fetch(logoUrl);
-      const logoBlob = await logoResponse.blob();
-      const logoDataUrl = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.readAsDataURL(logoBlob);
-      });
-      
-      const imgWidth = 60;
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const centerX = (pageWidth - imgWidth) / 2;
-      
-      doc.addImage(logoDataUrl as string, 'PNG', centerX, 15, imgWidth, imgWidth * 0.5);
-    } catch (error) {
-      console.error('Error loading logo:', error);
-      doc.setFontSize(20);
-      doc.setTextColor(0, 0, 0);
-      doc.text('Rotaract Club', 105, 30, { align: 'center' });
-    }
-    
-    // Add report title
-    doc.setFontSize(18);
-    doc.setTextColor(0, 0, 0);
-    doc.text('Payment Report', 105, 55, { align: 'center' });
-    
-    // Add filter info and date
-    doc.setFontSize(10);
-    let filterText = 'All Payments';
-    if (filter === '80000') filterText = 'Payments of UGX 80,000';
-    if (filter === '100000') filterText = 'Payments of UGX 100,000';
-    if (filter === 'fully') filterText = 'Fully Paid Members (UGX 180,000)';
-    
-    doc.text(`Filter: ${filterText}`, 20, 55);
-    const date = new Date().toLocaleDateString();
-    doc.text(`Generated on: ${date}`, 20, 60);
-    doc.text(`Page 1 of ${Math.ceil(filteredReports.length / 25)}`, 160, 60);
-    
-    // Prepare data for the table (limit to 25 rows per page for A4 portrait)
-    const headers = ['Member', 'Email', 'Club', 'Amount Paid', 'Balance', 'Status'];
-    const tableData = filteredReports.map(report => [
-      report.fullName,
-      report.email,
-      report.club_name || 'N/A',
-      `UGX ${report.amount_paid.toLocaleString()}`,
-      `UGX ${report.balance.toLocaleString()}`,
-      report.balance === 0 ? 'Fully Paid' : report.amount_paid > 0 ? 'Partially Paid' : 'Unpaid'
-    ]);
-    
-    // Add table using autoTable with clean styling
-    autoTable(doc, {
-      head: [headers],
-      body: tableData,
-      startY: 65,
-      styles: {
-        fontSize: 9,
-        cellPadding: 3,
-        textColor: [0, 0, 0],
-        overflow: 'linebreak'
-      },
-      headStyles: {
-        fillColor: [255, 255, 255],
-        textColor: [0, 0, 0],
-        fontStyle: 'bold',
-        lineWidth: 0.3,
-        lineColor: [200, 200, 200]
-      },
-      bodyStyles: {
-        lineWidth: 0.3,
-        lineColor: [240, 240, 240]
-      },
-      alternateRowStyles: {
-        fillColor: [248, 248, 248]
-      },
-      margin: { horizontal: 10 },
-      tableWidth: 'auto',
-      theme: 'grid',
-      pageBreak: 'auto',
-      rowPageBreak: 'avoid',
-      tableLineWidth: 0.1,
-      showHead: 'everyPage'
-    });
-    
-    // Save the PDF
-    doc.save(`rotaract-payments-${filter}-${date}.pdf`);
+    const imgWidth = 60;
+    const leftX = margin; // Positioned at left margin
+    doc.addImage(logoDataUrl as string, 'PNG', leftX, 15, imgWidth, imgWidth * 0.5);
+  } catch (error) {
+    console.error('Error loading logo:', error);
+    doc.setFontSize(20);
+    doc.text('Rotaract Club', pageWidth / 2, 30, { align: 'center' });
+  }
+
+  // Report title and metadata below logo
+  doc.setFontSize(18);
+  doc.text('Payment Report', pageWidth / 2, 40, { align: 'center' });
+  
+  doc.setFontSize(10);
+  let filterText = 'All Payments';
+  if (filter === '50000') filterText = 'Payments of UGX 50,000';
+  if (filter === '150000') filterText = 'Payments of UGX 150,000';
+  if (filter === 'fully') filterText = 'Fully Paid Members (UGX 200,000)';
+  
+  const date = new Date().toLocaleDateString();
+  doc.text(`${filterText} | Generated: ${date}`, pageWidth / 2, 45, { align: 'center' });
+
+  // Optimized column widths for maximum space utilization
+  const columnStyles = {
+    0: { cellWidth: 30 }, // Name
+    1: { cellWidth: 25 }, // Club
+    2: { cellWidth: 20 }, // Amount
+    3: { cellWidth: 20 }, // Balance
+    4: { cellWidth: 15 }, // T-Shirt
+    5: { cellWidth: 25 }, // Dietary
+    6: { cellWidth: 25 }, // District
+    7: { cellWidth: 15 }, // Gender
+    8: { cellWidth: 20 }, // Medical
+    9: { cellWidth: 20 }, // Status
+    10: { cellWidth: 25 } // Phone
   };
 
+  // Full headers with proper spacing
+  const headers = [
+    [
+      'Member Name', 
+      'Club', 
+      'Amount Paid', 
+      'Balance', 
+      'T-Shirt',
+      'Dietary Needs',
+      'District',
+      'Gender',
+      'Medical Cond.',
+      'Status',
+      'Phone'
+    ]
+  ];
+  
+  // Format data with proper spacing
+  const tableData = filteredReports.map(report => [
+    report.fullName,
+    report.club_name || '-',
+    `UGX ${report.amount_paid.toLocaleString()}`,
+    `UGX ${report.balance.toLocaleString()}`,
+    report.t_shirt_size || '-',
+    report.dietary_needs || 'Standard',
+    report.district || '-',
+    report.gender || '-',
+    report.special_medical_conditions ? 'Yes' : 'No',
+    report.balance === 0 ? 'Fully Paid' : report.amount_paid > 0 ? 'Partial' : 'Unpaid',
+    report.phone_number || '-'
+  ]);
+
+  // Main table with full-width styling
+  autoTable(doc, {
+    head: headers,
+    body: tableData,
+    startY: 50, // Below header content
+    margin: { 
+      left: margin,
+      right: margin
+    },
+    styles: {
+      fontSize: 10,
+      cellPadding: 3,
+      textColor: [0, 0, 0],
+      overflow: 'linebreak',
+      lineWidth: 0.1,
+      lineColor: [200, 200, 200],
+      minCellHeight: 6
+    },
+    columnStyles: columnStyles,
+    headStyles: {
+      fillColor: [0, 100, 0], // Dark blue
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 10,
+      cellPadding: 4,
+      halign: 'center'
+    },
+    bodyStyles: {
+      lineWidth: 0.1,
+      lineColor: [230, 230, 230]
+    },
+    alternateRowStyles: {
+      fillColor: [242, 242, 242]
+    },
+    tableWidth: 'auto',
+    theme: 'grid',
+    pageBreak: 'auto',
+    showHead: 'everyPage'
+  });
+
+  // Footer with page numbers
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text(
+      `Page ${i} of ${pageCount}`,
+      pageWidth - margin,
+      200, // Bottom of landscape page
+      { align: 'right' }
+    );
+  }
+  
+  doc.save(`rotaract-payments-${filter}-${date}.pdf`);
+};
   return (
     <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
@@ -256,20 +320,20 @@ export default function ReportsPage({ session }: { session: any }) {
           All Payments
         </Button>
         <Button 
-          variant={filter === '80000' ? 'default' : 'outline'} 
-          onClick={() => setFilter('80000')}
+          variant={filter === '50000' ? 'default' : 'outline'} 
+          onClick={() => setFilter('50000')}
           size="sm"
           className="text-xs sm:text-sm"
         >
-          UGX 80K
+          UGX 50K
         </Button>
         <Button 
-          variant={filter === '100000' ? 'default' : 'outline'} 
-          onClick={() => setFilter('100000')}
+          variant={filter === '150000' ? 'default' : 'outline'} 
+          onClick={() => setFilter('150000')}
           size="sm"
           className="text-xs sm:text-sm"
         >
-          UGX 100K
+          UGX 150K
         </Button>
         <Button 
           variant={filter === 'fully' ? 'default' : 'outline'} 
@@ -314,6 +378,25 @@ export default function ReportsPage({ session }: { session: any }) {
                       <th className="px-3 py-2 sm:px-4 sm:py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
                         Balance
                       </th>
+                       <th className="px-3 py-2 sm:px-4 sm:py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                        T-Shirt Size
+                      </th>
+                      
+                       <th className="px-3 py-2 sm:px-4 sm:py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                        Dietary Needs
+                      </th>
+                       <th className="px-3 py-2 sm:px-4 sm:py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                        Rotary District
+                      </th>
+                       <th className="px-3 py-2 sm:px-4 sm:py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                        Gender
+                      </th>
+                       <th className="px-3 py-2 sm:px-4 sm:py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                        Special Medical Cond..
+                      </th>
+                       <th className="px-3 py-2 sm:px-4 sm:py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                        Phone Number
+                      </th>
                       <th className="px-3 py-2 sm:px-4 sm:py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
@@ -338,6 +421,26 @@ export default function ReportsPage({ session }: { session: any }) {
                         <td className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap font-medium">
                           UGX {report.balance.toLocaleString()}
                         </td>
+                        <td className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap font-medium">
+                          {report.t_shirt_size.toLocaleString()}
+                        </td>
+                        <td className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap font-medium">
+                          {report.dietary_needs.toLocaleString()}
+                        </td>
+                        <td className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap font-medium">
+                          {report.district.toLocaleString()}
+                        </td>
+                        <td className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap font-medium">
+                          {report.gender.toLocaleString()}
+                        </td>
+                         <td className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap font-medium">
+                          {report.special_medical_conditions.toLocaleString()}
+                        </td>
+                          <td className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap font-medium">
+                          {report.phone_number}
+                        </td>
+                          
+                       
                         <td className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap">
                           <span
                             className={`px-2 py-1 inline-flex text-xs leading-4 font-medium rounded-full ${

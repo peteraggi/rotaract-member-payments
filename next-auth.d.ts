@@ -14,6 +14,7 @@ declare module "next-auth" {
     created_at: Date;
     updated_at: Date;
     isAdmin?: boolean; 
+    adminRole?: string; 
   }
 
   interface Session {

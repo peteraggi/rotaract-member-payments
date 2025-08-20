@@ -21,31 +21,31 @@ model User {
   gender          String?
   club_name       String?
   country         String?         @db.VarChar(50)
-  district        String?         @db.VarChar(20) // District 9212, etc.
-  designation     String?         @db.VarChar(30) // REI Committee, etc.
-  t_shirt_size    String?         @db.VarChar(5)  // S, M, L, etc.
-  dietary_needs   String?         @db.VarChar(20) // Vegetarian, etc.
+  district        String?         @db.VarChar(20)
+  designation     String?         @db.VarChar(30)
+  t_shirt_size    String?         @db.VarChar(5)
+  dietary_needs   String?         @db.VarChar(20)
   special_medical_conditions String? @db.VarChar(40)
-  accommodation   String?         @db.VarChar(20) // shared, single
-  otp             String?   // Stores the one-time pin code
-  otpExpiresAt    DateTime? // OTP expiration timestamp
+  accommodation   String?         @db.VarChar(20)
+  otp             String?
+  otpExpiresAt    DateTime?
   created_at      DateTime        @default(now())
   updated_at      DateTime        @updatedAt
 
   // Bank of Uganda required fields
   reference_number      String?       @unique @db.VarChar(30)
   system_unique_id      String?       @unique @db.VarChar(64)
-  operation_type        Int?          @default(0) // 0 for new, 1 for update
-  transaction_timestamp BigInt?       // Unix timestamp in milliseconds
-  account_id            String?       @db.VarChar(20) // Phone number
+  operation_type        Int?          @default(0)
+  transaction_timestamp BigInt?
+  account_id            String?       @db.VarChar(20)
   account_category_code String?       @db.VarChar(5)
   nin_number            String?      @db.VarChar(20)
-  date_of_birth         BigInt?      // Unix timestamp in milliseconds
-  account_status        Int?          @default(0) // 0-Active, 1-Inactive, 2-Suspended
+  date_of_birth         BigInt?
+  account_status        Int?          @default(0)
   
-  // Back-relations for ease of querying
+  // Relations
   registrations   Registration[]
-  payments        Payment[]
+  payments        Payment[] 
   
   @@index([email])
   @@index([phone_number])
@@ -58,15 +58,15 @@ model Registration {
   id                  Int       @id @default(autoincrement())
   user_id             Int
   user                User      @relation(fields: [user_id], references: [user_id])
-  registration_status String    @default("pending") // pending, registered, cancelled
+  registration_status String    @default("pending")
   amount_paid         Float     @default(0)
   balance             Float     @default(0)
-  total_amount        Float     @default(0) // NEW: Store the original total amount
-  payment_status      String    @default("pending") // pending, partially_paid, fully_paid
+  total_amount        Float     @default(0)
+  payment_status      String    @default("pending")
   created_at          DateTime  @default(now())
   updated_at          DateTime  @updatedAt
   
-  // Back-relation for payments
+  // Relations
   payments            Payment[]
   
   @@index([user_id])
@@ -76,19 +76,38 @@ model Registration {
 }
 
 model Payment {
-  id              Int             @id @default(autoincrement())
+  id                          Int       @id @default(autoincrement())
   user_id         Int
   user            User            @relation(fields: [user_id], references: [user_id])
-  amount          Float
-  payment_method  String
-  transaction_id  String?         @unique
-  payment_date    DateTime        @default(now())
-  registration_id Int?
-  registration    Registration?   @relation(fields: [registration_id], references: [id])
-  created_at      DateTime        @default(now())
+  registration_id             Int
+  registration                Registration @relation(fields: [registration_id], references: [id])
+  amount                      Float?
+  payment_method              String?
+  transaction_id              String?   @unique
+  status                      String?    @default("pending")
+  phone_number                String?
   
-  @@index([user_id])
+  // BOU Fields
+  reference_number            String?    @unique
+  entry_type                  String?
+  purpose_code                Int?
+  transaction_datetime        DateTime?
+  initiator_account_id        String?
+  second_party_account_id     String?
+  transfer_value              Int?
+  emoney_issuer_code          String?
+  message_category            String?
+  off_network                 Int?
+  initiator_access_type       String?
+  initiator_country_code      String?
+  second_party_country_code   String?
+  transfer_description        String?
+  
+  created_at                  DateTime  @default(now())
+  
+  @@index([registration_id])
   @@index([transaction_id])
+  @@index([reference_number])
   @@map("payment")
 }
 
@@ -98,4 +117,26 @@ model DailyTransactionCounter {
   counter   Int      @default(1)
   
   @@map("daily_transaction_counter")
+}
+
+model LiquidationRequest {
+  id              String   @id @default(uuid())
+  amount          Float
+  paymentMethod   String
+  bankName        String?
+  accountNumber   String?
+  accountName     String
+  mobileNumber    String?
+  network         String?
+  reason          String
+  disbursementDate DateTime
+  status          String   @default("pending")
+  requesterId     String
+  requesterName   String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([requesterId])
+  @@index([status])
+  @@map("liquidation_request")
 }

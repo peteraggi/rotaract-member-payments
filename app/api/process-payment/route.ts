@@ -1,8 +1,9 @@
-// app/api/process-payment/route.ts
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
+import { PrismaClient } from '@prisma/client';
 
-const RELWORX_API_ENDPOINT = 'https://payments.relworx.com/api/mobile-money';
+const prisma = new PrismaClient();
+const PROXY_API_ENDPOINT = process.env.PROXY_API_ENDPOINT || 'http://161.35.39.124:3001/api';
 
 export async function POST(req: Request) {
   const headersList = headers();
@@ -31,49 +32,31 @@ export async function POST(req: Request) {
       );
     }
 
-    // First validate the mobile number
-    const validationResponse = await validateMobileNumber(phoneNumber);
-    if (!validationResponse.success) {
+    // Forward the request to our proxy API
+    const response = await fetch(`${PROXY_API_ENDPOINT}/process-payment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ amount, phoneNumber })
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
       return NextResponse.json(
         { 
           success: false,
-          error: 'INVALID_NUMBER',
-          message: `Invalid mobile number: ${validationResponse.message || 'Validation failed'}`,
-          details: validationResponse
+          error: result.error || 'PAYMENT_FAILED',
+          message: result.message || 'Payment request failed',
+          details: result
         },
-        { status: 400 }
+        { status: response.status }
       );
     }
 
-    // Request payment
-    const paymentResponse = await requestPayment({
-      phoneNumber,
-      amount,
-      description: 'Conference registration payment'
-    });
-
-    if (!paymentResponse.success) {
-      return NextResponse.json(
-        { 
-          success: false,
-          error: paymentResponse.error_code || 'PAYMENT_FAILED',
-          message: paymentResponse.message || 'Payment request failed',
-          details: paymentResponse
-        },
-        { status: 400 }
-      );
-    }
-
-    // Return the references to track payment status
-    return NextResponse.json({
-      success: true,
-      status: 'PENDING',
-      customerReference: paymentResponse.customer_reference,
-      internalReference: paymentResponse.internal_reference,
-      message: 'Payment request initiated. Please approve on your phone.',
-      provider: paymentResponse.provider,
-      amount: paymentResponse.amount
-    });
+    return NextResponse.json(result);
 
   } catch (error) {
     console.error('Payment processing error:', error);
@@ -85,93 +68,5 @@ export async function POST(req: Request) {
       },
       { status: 500 }
     );
-  }
-}
-
-async function validateMobileNumber(phoneNumber: string) {
-  try {
-    const response = await fetch(`${RELWORX_API_ENDPOINT}/validate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.relworx.v2',
-        'Authorization': `Bearer ${process.env.RELWORX_API_KEY}`
-      },
-      body: JSON.stringify({
-        msisdn: `+${phoneNumber}`
-      })
-    });
-
-    const result = await response.json();
-    
-    if (!response.ok) {
-      return {
-        success: false,
-        message: result.message || 'Validation failed',
-        ...result
-      };
-    }
-
-    return {
-      success: true,
-      valid: result.valid,
-      network: result.network,
-      message: result.message,
-      ...result
-    };
-
-  } catch (error) {
-    console.error('Validation error:', error);
-    return {
-      success: false,
-      message: 'Error during validation'
-    };
-  }
-}
-
-async function requestPayment(params: {
-  phoneNumber: string;
-  amount: number;
-  description: string;
-}) {
-  try {
-    const response = await fetch(`${RELWORX_API_ENDPOINT}/request-payment`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.relworx.v2',
-        'Authorization': `Bearer ${process.env.RELWORX_API_KEY}`
-      },
-      body: JSON.stringify({
-        account_no: process.env.RELWORX_ACCOUNT_NO,
-        msisdn: `+${params.phoneNumber}`,
-        amount: params.amount,
-        currency: 'UGX',
-        description: params.description,
-        reference: `REI-${Date.now()}` // Unique reference for each transaction
-      })
-    });
-
-    const result = await response.json();
-    
-    if (!response.ok) {
-      return {
-        success: false,
-        message: result.message || 'Payment request failed',
-        ...result
-      };
-    }
-
-    return {
-      success: true,
-      ...result
-    };
-
-  } catch (error) {
-    console.error('Payment request error:', error);
-    return {
-      success: false,
-      message: 'Error during payment request'
-    };
   }
 }
