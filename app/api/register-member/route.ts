@@ -46,7 +46,7 @@ export async function POST(request: Request) {
         user_id: user.user_id,
         registration_status: 'registered',
         amount_paid: 0,
-        balance: 180000,
+        balance: 200000,
         payment_status: 'pending',
       },
     });

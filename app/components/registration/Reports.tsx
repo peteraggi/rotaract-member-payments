@@ -37,7 +37,7 @@ export default function ReportsPage({ session }: { session: any }) {
   const [reports, setReports] = useState<PaymentReport[]>([]);
   const [filteredReports, setFilteredReports] = useState<PaymentReport[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | '50000' | '150000' | 'fully'>('all');
+  const [filter, setFilter] = useState<'all' | '80000' | '150000' | 'fully'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
 
@@ -70,11 +70,11 @@ export default function ReportsPage({ session }: { session: any }) {
   useEffect(() => {
     let filtered = [...reports];
     switch (filter) {
-      case '50000':
-        filtered = reports.filter(report => report.amount_paid === 50000);
+      case '80000':
+        filtered = reports.filter(report => report.amount_paid === 80000);
         break;
       case '150000':
-        filtered = reports.filter(report => report.amount_paid === 200000);
+        filtered = reports.filter(report => report.amount_paid === 150000);
         break;
       case 'fully':
         filtered = reports.filter(report => report.balance === 0);
@@ -165,7 +165,7 @@ const generatePDF = async () => {
   
   doc.setFontSize(10);
   let filterText = 'All Payments';
-  if (filter === '50000') filterText = 'Payments of UGX 50,000';
+  if (filter === '80000') filterText = 'Payments of UGX 80,000';
   if (filter === '150000') filterText = 'Payments of UGX 150,000';
   if (filter === 'fully') filterText = 'Fully Paid Members (UGX 200,000)';
   
@@ -320,12 +320,12 @@ const generatePDF = async () => {
           All Payments
         </Button>
         <Button 
-          variant={filter === '50000' ? 'default' : 'outline'} 
-          onClick={() => setFilter('50000')}
+          variant={filter === '80000' ? 'default' : 'outline'} 
+          onClick={() => setFilter('80000')}
           size="sm"
           className="text-xs sm:text-sm"
         >
-          UGX 50K
+          UGX 80K
         </Button>
         <Button 
           variant={filter === '150000' ? 'default' : 'outline'} 
