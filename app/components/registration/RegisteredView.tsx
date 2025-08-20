@@ -757,7 +757,7 @@ const pollStatus = async () => {
                                 className="mt-1 bg-white font-medium w-full p-2 border rounded-md"
                               >
                                 <option value="">Select an amount</option>
-                                 <option value="500">500 UGX</option>
+                                 {/* <option value="500">500 UGX</option> */}
                                 <option value="80000">80,000 UGX</option>
                                 <option value="100000">100,000 UGX</option>
                                 <option value="200000">200,000 UGX</option>
