@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { ADMINS } from '@/lib/bou-utils';
 
 interface PaymentReport {
   user_id: number;
@@ -42,7 +43,7 @@ export default function ReportsPage({ session }: { session: any }) {
   const recordsPerPage = 10;
 
   // Admin check
-  const isAdmin = session?.user?.email === 'aggi@scintl.co.ug' || session?.user?.isAdmin;
+  const isAdmin = ADMINS.some(admin => admin.email === session?.user?.email) || session?.user?.isAdmin;
 
   useEffect(() => {
     if (!isAdmin) {

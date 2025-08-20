@@ -45,3 +45,18 @@ export function safeBigIntToJSON(data: any) {
     typeof value === 'bigint' ? value.toString() : value
   ));
 }
+
+export const ADMINS = [
+  {
+    email: 'markkimbz@gmail.com',
+    name: 'Mark Kimbugwe',
+    phone: '0703634786',
+    role: 'requester'
+  },
+  {
+    email: 'alebarkm@gmail.com',
+    name: 'Alebar Kanyonza',
+    phone: '+256778107764',
+    role: 'approver'
+  }
+];

@@ -8,7 +8,7 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const session = await auth();
-  const isAdmin = session?.user?.email === 'aggi@scintl.co.ug';
+const isAdmin = session?.user?.email === 'alebarkm@gmail.com' || session?.user?.email === 'markkimbz@gmail.com';
 
   return (
     <div className="min-h-screen bg-gray-50">

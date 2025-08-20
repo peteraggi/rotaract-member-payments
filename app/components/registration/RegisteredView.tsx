@@ -456,7 +456,9 @@ const pollStatus = async () => {
 
     setShowSuccessPopup(true);
     toast.success("Payment confirmed and saved!");
-    router.refresh();
+        setTimeout(() => {
+        window.location.reload();
+      }, 9000); 
   } else if (statusResult.status === "failed") {
     clearInterval(interval);
     setPaymentStatus("failed");
@@ -543,7 +545,7 @@ const pollStatus = async () => {
             <Button
               onClick={() => {
                 setShowSuccessPopup(false);
-                router.refresh();
+                window.location.reload();
               }}
               className="w-full bg-gray-900 hover:bg-gray-800"
             >
@@ -575,7 +577,7 @@ const pollStatus = async () => {
               </Button>
               <Button
                 onClick={() =>
-                  (window.location.href = "mailto:support@conference.org")
+                  (window.location.href = "mailto:alebarkm@gmail.com")
                 }
                 className="flex-1 bg-gray-900 hover:bg-gray-800"
               >

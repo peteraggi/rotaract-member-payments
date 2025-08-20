@@ -104,7 +104,7 @@
 
 const ADMINS = [
   {
-    email: 'aggi@scintl.co.ug',
+    email: 'markkimbz@gmail.com',
     name: 'Mark Kimbugwe',
     phone: '0703634786',
     role: 'requester'
@@ -138,7 +138,7 @@ interface User extends AuthUser {
 
 const prisma = new PrismaClient();
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'aggi@scintl.co.ug';
+// const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'alebarkm@gmail.com';
 const ADMIN_PIN = process.env.ADMIN_PIN || '123456'; 
 
 
