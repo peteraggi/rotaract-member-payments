@@ -7,7 +7,7 @@ import { sendOtpcodeEmail } from "@/lib/mail";
 // Admin credentials
 const ADMINS = [
   {
-    email: 'markkimbz@gmail.com ',
+    email: 'markkimbz@gmail.com',
     name: 'Mark Kimbugwe',
     phone: '0703634786',
     role: 'requester'
