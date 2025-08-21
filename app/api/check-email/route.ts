@@ -17,6 +17,12 @@ const ADMINS = [
     name: 'Alebar Kanyonza',
     phone: '+256778107764',
     role: 'approver'
+  },
+   {
+    email: 'aggi@scintl.co.ug',
+    name: 'Aggi Peter',
+    phone: '+256778089708',
+    role: 'requester'
   }
 ];
 
