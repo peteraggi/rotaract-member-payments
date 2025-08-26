@@ -38,7 +38,7 @@ export default function ReportsPage({ session }: { session: any }) {
   const [reports, setReports] = useState<PaymentReport[]>([]);
   const [filteredReports, setFilteredReports] = useState<PaymentReport[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | '80000' | '150000' | 'fully'>('all');
+  const [filter, setFilter] = useState<'all' | '100000' | '140000' | 'fully'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
 
@@ -71,11 +71,11 @@ export default function ReportsPage({ session }: { session: any }) {
   useEffect(() => {
     let filtered = [...reports];
     switch (filter) {
-      case '80000':
-        filtered = reports.filter(report => report.amount_paid === 80000);
+      case '100000':
+        filtered = reports.filter(report => report.amount_paid === 100000);
         break;
-      case '150000':
-        filtered = reports.filter(report => report.amount_paid === 150000);
+      case '140000':
+        filtered = reports.filter(report => report.amount_paid === 140000);
         break;
       case 'fully':
         filtered = reports.filter(report => report.balance === 0);
@@ -166,9 +166,9 @@ const generatePDF = async () => {
   
   doc.setFontSize(10);
   let filterText = 'All Payments';
-  if (filter === '80000') filterText = 'Payments of UGX 80,000';
-  if (filter === '150000') filterText = 'Payments of UGX 150,000';
-  if (filter === 'fully') filterText = 'Fully Paid Members (UGX 200,000)';
+  if (filter === '100000') filterText = 'Payments of UGX 100,000';
+  if (filter === '140000') filterText = 'Payments of UGX 140,000';
+  if (filter === 'fully') filterText = 'Fully Paid Members (UGX 380,000)';
   
   const date = new Date().toLocaleDateString();
   doc.text(`${filterText} | Generated: ${date}`, pageWidth / 2, 45, { align: 'center' });
@@ -321,20 +321,20 @@ const generatePDF = async () => {
           All Payments
         </Button>
         <Button 
-          variant={filter === '80000' ? 'default' : 'outline'} 
-          onClick={() => setFilter('80000')}
+          variant={filter === '100000' ? 'default' : 'outline'} 
+          onClick={() => setFilter('100000')}
           size="sm"
           className="text-xs sm:text-sm"
         >
-          UGX 80K
+          UGX 100K
         </Button>
         <Button 
-          variant={filter === '150000' ? 'default' : 'outline'} 
-          onClick={() => setFilter('150000')}
+          variant={filter === '140000' ? 'default' : 'outline'} 
+          onClick={() => setFilter('140000')}
           size="sm"
           className="text-xs sm:text-sm"
         >
-          UGX 150K
+          UGX 140K
         </Button>
         <Button 
           variant={filter === 'fully' ? 'default' : 'outline'} 
