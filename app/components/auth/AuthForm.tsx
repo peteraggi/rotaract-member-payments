@@ -91,6 +91,15 @@ export default function AuthForm() {
     });
   };
 
+   const getDateLimits = () => {
+    const today = new Date();
+    const minDate = new Date(1900, 0, 1).toISOString().split('T')[0];
+    const maxDate = new Date(today.getFullYear() - 13, today.getMonth(), today.getDate()).toISOString().split('T')[0];
+    return { minDate, maxDate };
+  };
+
+  const { minDate, maxDate } = getDateLimits();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f0f4f8] to-[#dfe7ef] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -158,6 +167,23 @@ export default function AuthForm() {
                       </FormItem>
                     )}
                   />
+                  {/* <FormField
+                    control={form.control}
+                    name="date_of_birth"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Date of Birth</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="date"
+                            disabled={isPending}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  /> */}
                   <FormField
                     control={form.control}
                     name="date_of_birth"
@@ -169,6 +195,28 @@ export default function AuthForm() {
                             {...field}
                             type="date"
                             disabled={isPending}
+                            min={minDate}
+                            max={maxDate}
+                            // Set the default view to year selection first
+                            onFocus={(e) => {
+                              // This creates a better user experience for selecting recent years
+                              e.target.showPicker = () => {
+                                const input = e.target;
+                                input.type = 'text';
+                                setTimeout(() => {
+                                  input.type = 'date';
+                                  // Create and dispatch a click event to open the datepicker
+                                  const event = new MouseEvent('click', {
+                                    view: window,
+                                    bubbles: true,
+                                    cancelable: true
+                                  });
+                                  input.dispatchEvent(event);
+                                }, 100);
+                              };
+                              e.target.showPicker();
+                            }}
+                            className="date-of-birth-input"
                           />
                         </FormControl>
                         <FormMessage />
