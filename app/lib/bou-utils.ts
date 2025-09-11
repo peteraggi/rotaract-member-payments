@@ -64,5 +64,11 @@ export const ADMINS = [
     name: 'Aggi Peter',
     phone: '+256778089708',
     role: 'requester'
+  },
+  {
+    email: 'johnivoenterprises@gmail.com',
+    name: 'Oyuki John Ivan',
+    phone: '+256754586892',
+    role: 'requester'
   }
 ];

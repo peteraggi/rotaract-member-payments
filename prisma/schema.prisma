@@ -25,8 +25,8 @@ model User {
   designation     String?         @db.VarChar(30)
   t_shirt_size    String?         @db.VarChar(5)
   dietary_needs   String?         @db.VarChar(20)
-  special_medical_conditions String? @db.VarChar(40)
-  accommodation   String?         @db.VarChar(20)
+  special_medical_conditions String? @db.VarChar(100)
+  accommodation   String?         @db.VarChar(100)
   otp             String?
   otpExpiresAt    DateTime?
   created_at      DateTime        @default(now())

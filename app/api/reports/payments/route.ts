@@ -9,7 +9,7 @@ export async function GET() {
     const registrations = await prisma.registration.findMany({
       include: {
         user: {
-          select: {
+          select: { 
             user_id: true,
             fullName: true,
             email: true,
