@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -757,9 +758,13 @@ const pollStatus = async () => {
                                 className="mt-1 bg-white font-medium w-full p-2 border rounded-md"
                               >
                                 <option value="">Select an amount</option>
-                               {/* <option value="500">500 UGX</option>  */}
-                                <option value="100000">100,000 UGX</option>
+                                <option value="20000">20,000 UGX</option>
+                               <option value="60000">60,000 UGX</option>
+                               <option value="50000">50,000 UGX</option>
+                               <option value="75000">75,000 UGX</option>
                                 <option value="80000">80,000 UGX</option>
+                                <option value="100000">100,000 UGX</option>
+                               <option value="150000">150,000 UGX</option> 
                                 <option value="140000">140,000 UGX</option>
                                 <option value="380000">380,000 UGX</option>
                               </select>
