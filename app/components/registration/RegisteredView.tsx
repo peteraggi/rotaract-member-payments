@@ -766,6 +766,8 @@ const pollStatus = async () => {
                                 <option value="100000">100,000 UGX</option>
                                <option value="150000">150,000 UGX</option> 
                                 <option value="140000">140,000 UGX</option>
+                                <option value="160000">160,000 UGX</option>
+                                <option value="200000">200,000 UGX</option>
                                 <option value="300000">300,000 UGX</option>
                                 <option value="380000">380,000 UGX</option>
                               </select>
