@@ -40,18 +40,6 @@ interface PaymentDetails {
   completedAt?: string;
 }
 
-// const CustomToast = ({ message, type }: { message: string; type: 'success' | 'error' }) => (
-//   <div className={`max-w-xs md:max-w-sm break-words flex items-start gap-2 p-3 rounded-md ${
-//     type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-//   }`}>
-//     {type === 'success' ? (
-//       <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" />
-//     ) : (
-//       <XCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
-//     )}
-//     <span>{message}</span>
-//   </div>
-// );
 const CustomToast = ({
   message,
   type,
@@ -90,9 +78,6 @@ export default function RegisteredView() {
     null
   );
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-  // const [amount, setAmount] = useState("");
-  const [feeAmount, setFeeAmount] = useState(0);
-  const [totalAmounts, setTotalAmounts] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -222,7 +207,6 @@ const savePaymentToDB = async (paymentData: {
     console.log('Save payment response:', result);
 
     if (!response.ok) {
-      // Handle the correct error format - use result.message instead of result.error
       const errorMessage = result.message || result.error || "Failed to save payment record";
       console.error("Save payment error details:", result);
       throw new Error(errorMessage);
@@ -314,7 +298,7 @@ const savePaymentToDB = async (paymentData: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify({
-          amount: Number(totalAmounts),
+          amount: Number(amount), // Changed from totalAmounts to amount
           phoneNumber: phoneNumber,
         }),
       });
@@ -329,7 +313,7 @@ const savePaymentToDB = async (paymentData: {
         internalReference: result.internalReference,
         customerReference: result.customerReference,
         provider: result.provider,
-        amount: Number(amount),
+        amount: Number(amount), // Changed from amount to the selected amount
         msisdn: `+${phoneNumber}`,
       });
 
@@ -337,74 +321,12 @@ const savePaymentToDB = async (paymentData: {
         result.message || "Payment request sent. Please approve on your phone."
       );
 
-      // const pollStatus = async () => {
-      //   if (!result.internalReference) return;
-
-      //   const statusResult = await checkPaymentStatus(result.internalReference);
-
-      //   if (!statusResult.success) {
-      //     throw new Error(statusResult.message);
-      //   }
-
-      //   if (statusResult.status === "success") {
-      //     clearInterval(interval);
-
-      //     // Save payment to database
-      //     await savePaymentToDB({
-      //       userId: data.user.user_id,
-      //       amount: Number(amount),
-      //       transactionId: result.internalReference,
-      //       registrationId: data.registration.id,
-      //     });
-
-      //     // Send payment confirmation email
-      //     await fetch("/api/send-payment-email", {
-      //       method: "POST",
-      //       headers: {
-      //         "Content-Type": "application/json",
-      //       },
-      //       body: JSON.stringify({
-      //         email: data.user.email,
-      //         fullName: data.user.fullName,
-      //         amountPaid: Number(amount),
-      //         balance: data.registration.balance - Number(amount),
-      //         totalAmount:
-      //           data.registration.amount_paid + data.registration.balance,
-      //         paymentMethod:
-      //           paymentMethod === "mobileMoney"
-      //             ? "Mobile Money"
-      //             : "Credit/Debit Card",
-      //         transactionId: result.internalReference,
-      //       }),
-      //     });
-
-      //     setPaymentStatus("idle");
-      //     setPaymentLoading(false);
-      //     setPaymentDetails((prev) => ({
-      //       ...prev,
-      //       providerTransactionId: statusResult.data.providerTransactionId,
-      //       completedAt: statusResult.data.completedAt,
-      //     }));
-
-      //     setShowSuccessPopup(true);
-      //     toast.success("Payment confirmed and saved!");
-      //     router.refresh();
-      //   } else if (statusResult.status === "failed") {
-      //     clearInterval(interval);
-      //     setPaymentStatus("failed");
-      //     setPaymentLoading(false);
-      //     toast.error("Payment failed Please try again");
-      //   }
-      // };
-
 const pollStatus = async () => {
   if (!result.internalReference) return;
 
-  // Get current time and calculate if 4 minutes have passed
   const currentTime = Date.now();
-  const timeElapsed = (currentTime - startTime) / 1000; // Convert to seconds
+  const timeElapsed = (currentTime - startTime) / 1000;
 
-  // If 4 minutes (240 seconds) have passed, stop polling and mark as failed
   if (timeElapsed >= 240) {
     clearInterval(interval);
     setPaymentStatus("failed");
@@ -413,7 +335,6 @@ const pollStatus = async () => {
     return;
   }
 
-  // Otherwise, check payment status
   const statusResult = await checkPaymentStatus(result.internalReference);
 
   if (!statusResult.success) {
@@ -423,7 +344,6 @@ const pollStatus = async () => {
   if (statusResult.status === "success") {
     clearInterval(interval);
 
-    // Save payment to DB
     await savePaymentToDB({
       userId: data.user.user_id,
       amount: Number(amount),
@@ -432,7 +352,6 @@ const pollStatus = async () => {
       phoneNumber: phoneNumber,
     });
 
-    // Send confirmation email
     await fetch("/api/send-payment-email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -748,13 +667,7 @@ const pollStatus = async () => {
                               <Label>Amount (UGX)</Label>
                               <select
                                 value={amount}
-                                onChange={(e) => {
-                                  const selectedAmount = e.target.value;
-                                  setAmount(selectedAmount);
-                                  const fee = selectedAmount ? Number(selectedAmount) * 0.03 : 0;
-                                  setFeeAmount(fee);
-                                  setTotalAmounts(selectedAmount ? Number(selectedAmount) + fee : 0);
-                                }}
+                                onChange={(e) => setAmount(e.target.value)}
                                 className="mt-1 bg-white font-medium w-full p-2 border rounded-md"
                               >
                                 <option value="">Select an amount</option>
@@ -774,22 +687,10 @@ const pollStatus = async () => {
                             </div>
                             {amount && (
                               <div className="space-y-2 pt-2">
-                                <div className="flex justify-between">
-                                  <span className="text-sm text-gray-600">Amount:</span>
-                                  <span className="text-sm font-medium">
-                                    {parseFloat(amount).toLocaleString()} UGX
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-sm text-gray-600">Fee (3%):</span>
-                                  <span className="text-sm font-medium">
-                                    {feeAmount.toLocaleString()} UGX
-                                  </span>
-                                </div>
                                 <div className="flex justify-between border-t pt-2">
-                                  <span className="text-sm font-semibold">Total:</span>
+                                  <span className="text-sm font-semibold">Total Amount:</span>
                                   <span className="text-sm font-semibold">
-                                    {totalAmounts.toLocaleString()} UGX
+                                    {parseFloat(amount).toLocaleString()} UGX
                                   </span>
                                 </div>
                               </div>
