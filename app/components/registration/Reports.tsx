@@ -8,7 +8,8 @@ import {
   Users, DollarSign, CheckCircle, XCircle, Filter,
   ChevronDown, Circle, CheckCircle2, Clock,
   Bed,
-  Mail
+  Mail,
+  MoreHorizontal
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -60,10 +61,11 @@ export default function ReportsPage({ session }: { session: any }) {
   const [reports, setReports] = useState<PaymentReport[]>([]);
   const [filteredReports, setFilteredReports] = useState<PaymentReport[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | '100000' | '140000' | 'fully'>('all');
+  const [filter, setFilter] = useState<'all' | '100000' | '300000' | 'fully'>('all');
   const [genderFilter, setGenderFilter] = useState<'all' | 'male' | 'female'>('all');
   const [accommodationFilter, setAccommodationFilter] = useState<'all' | 'shared' | 'not_shared'>('all');
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'unpaid' | 'partial'>('all');
+  const [districtFilter, setDistrictFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
   const [reminderStatuses, setReminderStatuses] = useState<ReminderStatus[]>([]);
@@ -90,6 +92,9 @@ export default function ReportsPage({ session }: { session: any }) {
     report.accommodation?.toLowerCase().includes('no') ||
     report.accommodation?.toLowerCase().includes('private')
   ).length;
+  
+  // Get unique districts for filter
+  const uniqueDistricts = Array.from(new Set(reports.map(report => report.district).filter(Boolean))).sort();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<PaymentReport | null>(null);
 
@@ -156,8 +161,8 @@ export default function ReportsPage({ session }: { session: any }) {
       case '100000':
         filtered = filtered.filter(report => report.amount_paid === 100000);
         break;
-      case '140000':
-        filtered = filtered.filter(report => report.amount_paid === 140000);
+      case '300000':
+        filtered = filtered.filter(report => report.amount_paid === 300000);
         break;
       case 'fully':
         filtered = filtered.filter(report => report.balance === 0);
@@ -216,9 +221,14 @@ export default function ReportsPage({ session }: { session: any }) {
         break;
     }
 
+    // Apply district filter
+    if (districtFilter !== 'all') {
+      filtered = filtered.filter(report => report.district === districtFilter);
+    }
+
     setFilteredReports(filtered);
     setCurrentPage(1);
-  }, [filter, genderFilter, accommodationFilter, paymentFilter, reports]);
+  }, [filter, genderFilter, accommodationFilter, paymentFilter, districtFilter, reports]);
 
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
@@ -226,6 +236,47 @@ export default function ReportsPage({ session }: { session: any }) {
   const totalPages = Math.ceil(filteredReports.length / recordsPerPage);
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+  // Improved pagination logic with dots
+  const getPaginationItems = () => {
+    const items = [];
+    const maxVisiblePages = 7; // Show max 7 page numbers including dots
+    
+    if (totalPages <= maxVisiblePages) {
+      // Show all pages if total pages is less than or equal to max visible
+      for (let i = 1; i <= totalPages; i++) {
+        items.push(i);
+      }
+    } else {
+      // Always show first page
+      items.push(1);
+      
+      if (currentPage <= 4) {
+        // Near the beginning: show first 5 pages, then dots, then last page
+        for (let i = 2; i <= 5; i++) {
+          items.push(i);
+        }
+        items.push('ellipsis');
+        items.push(totalPages);
+      } else if (currentPage >= totalPages - 3) {
+        // Near the end: show first page, dots, then last 5 pages
+        items.push('ellipsis');
+        for (let i = totalPages - 4; i <= totalPages; i++) {
+          items.push(i);
+        }
+      } else {
+        // In the middle: show first page, dots, current-1, current, current+1, dots, last page
+        items.push('ellipsis');
+        items.push(currentPage - 1);
+        items.push(currentPage);
+        items.push(currentPage + 1);
+        items.push('ellipsis');
+        items.push(totalPages);
+      }
+    }
+    
+    return items;
+  };
 
   if (!isAdmin) {
     return null;
@@ -410,7 +461,7 @@ export default function ReportsPage({ session }: { session: any }) {
     doc.setFontSize(10);
     let filterText = 'All Payments';
     if (filter === '100000') filterText = 'Payments of UGX 100,000';
-    if (filter === '140000') filterText = 'Payments of UGX 140,000';
+    if (filter === '300000') filterText = 'Payments of UGX 300,000';
     if (filter === 'fully') filterText = 'Fully Paid Members (UGX 380,000)';
 
     const date = new Date().toLocaleDateString();
@@ -555,6 +606,8 @@ export default function ReportsPage({ session }: { session: any }) {
           case 'unpaid': return 'Unpaid';
           default: return 'All Statuses';
         }
+      case 'district':
+        return value === 'all' ? 'All Districts' : value;
       default:
         return '';
     }
@@ -680,48 +733,6 @@ export default function ReportsPage({ session }: { session: any }) {
             </p>
           </CardContent>
         </Card>
-
-        {/* Pending Revenue */}
-        {/* <Card className="bg-orange-50 border-orange-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">UGX {totalPendingRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              Amount yet to be collected
-            </p>
-          </CardContent>
-        </Card> */}
-
-        {/* Average Payment */}
-        {/* <Card className="bg-indigo-50 border-indigo-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Payment</CardTitle>
-            <DollarSign className="h-4 w-4 text-indigo-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">UGX {averagePaymentPerMember.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              Per registered member
-            </p>
-          </CardContent>
-        </Card> */}
-
-        {/* Shared Accommodation */}
-        {/* <Card className="bg-cyan-50 border-cyan-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Shared Accommodation</CardTitle>
-            <Bed className="h-4 w-4 text-cyan-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalSharedAccommodation}</div>
-            <p className="text-xs text-muted-foreground">
-              {totalSharedAccommodation > 0 ? `${((totalSharedAccommodation / totalMembers) * 100).toFixed(1)}% of members` : 'No shared accommodation'}
-            </p>
-          </CardContent>
-        </Card> */}
       </div>
 
       {/* Filter Controls with Dropdowns */}
@@ -748,8 +759,8 @@ export default function ReportsPage({ session }: { session: any }) {
             <DropdownMenuItem onClick={() => setFilter('100000')}>
               UGX 100K
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setFilter('140000')}>
-              UGX 140K
+            <DropdownMenuItem onClick={() => setFilter('300000')}>
+              UGX 300K
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFilter('fully')}>
               Fully Paid
@@ -829,8 +840,33 @@ export default function ReportsPage({ session }: { session: any }) {
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* District Filter Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              {getFilterDisplayText('district', districtFilter)}
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="max-h-60 overflow-y-auto">
+            <DropdownMenuLabel>District</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setDistrictFilter('all')}>
+              All Districts
+            </DropdownMenuItem>
+            {uniqueDistricts.map((district) => (
+              <DropdownMenuItem 
+                key={district} 
+                onClick={() => setDistrictFilter(district)}
+              >
+                {district}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {/* Clear Filters Button */}
-        {(filter !== 'all' || genderFilter !== 'all' || accommodationFilter !== 'all' || paymentFilter !== 'all') && (
+        {(filter !== 'all' || genderFilter !== 'all' || accommodationFilter !== 'all' || paymentFilter !== 'all' || districtFilter !== 'all') && (
           <Button
             variant="ghost"
             size="sm"
@@ -839,6 +875,7 @@ export default function ReportsPage({ session }: { session: any }) {
               setGenderFilter('all');
               setAccommodationFilter('all');
               setPaymentFilter('all');
+              setDistrictFilter('all');
             }}
             className="text-red-600 hover:text-red-700 hover:bg-red-50"
           >
@@ -1013,6 +1050,7 @@ export default function ReportsPage({ session }: { session: any }) {
                   </div>
                   <div>
                     <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                      {/* Previous button */}
                       <button
                         onClick={() => paginate(Math.max(1, currentPage - 1))}
                         disabled={currentPage === 1}
@@ -1021,18 +1059,36 @@ export default function ReportsPage({ session }: { session: any }) {
                         <span className="sr-only">Previous</span>
                         <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                       </button>
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-                        <button
-                          key={number}
-                          onClick={() => paginate(number)}
-                          className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${currentPage === number
-                              ? 'bg-blue-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
-                              : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
-                            }`}
-                        >
-                          {number}
-                        </button>
-                      ))}
+
+                      {/* Page numbers with dots */}
+                      {getPaginationItems().map((item, index) => {
+                        if (item === 'ellipsis') {
+                          return (
+                            <span
+                              key={`ellipsis-${index}`}
+                              className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </span>
+                          );
+                        }
+
+                        const pageNumber = item as number;
+                        return (
+                          <button
+                            key={pageNumber}
+                            onClick={() => paginate(pageNumber)}
+                            className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${currentPage === pageNumber
+                                ? 'bg-blue-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                                : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                              }`}
+                          >
+                            {pageNumber}
+                          </button>
+                        );
+                      })}
+
+                      {/* Next button */}
                       <button
                         onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
                         disabled={currentPage === totalPages}
