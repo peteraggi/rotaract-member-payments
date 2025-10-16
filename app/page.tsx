@@ -20,7 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Mail, ChevronRight, X } from "lucide-react";
+import { Mail, ChevronRight, X, Info } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -31,6 +31,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useSession } from "next-auth/react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Form schema validation
 const FormSchema = z.object({
@@ -38,12 +47,13 @@ const FormSchema = z.object({
 });
 
 export default function Page() {
-   const { data: session, status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showBanner, setShowBanner] = useState(true);
   const [isPosterOpen, setIsPosterOpen] = useState(false);
+  const [showRegistrationClosed, setShowRegistrationClosed] = useState(false);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -65,11 +75,14 @@ export default function Page() {
         if (!response.ok) {
           throw new Error(data.error || "Request failed");
         }
-        document.cookie = `authFlow=1; path=/; max-age=${60 * 15}`; 
+
         if (data.exists) {
+          // Email exists - allow login
+          document.cookie = `authFlow=1; path=/; max-age=${60 * 15}`;
           router.push(`/login?email=${encodeURIComponent(values.email)}`);
         } else {
-          router.push(`/auth?email=${encodeURIComponent(values.email)}`);
+          // Email doesn't exist - show registration closed popup
+          setShowRegistrationClosed(true);
         }
       } catch (error) {
         setSubmitError(
@@ -79,7 +92,7 @@ export default function Page() {
     });
   };
 
-useEffect(() => {
+  useEffect(() => {
     if (status === "authenticated") {
       if (session?.user?.isAdmin) {
         router.push("/admin");
@@ -170,6 +183,44 @@ useEffect(() => {
           </div>
         </div>
       )}
+
+      {/* Registration Closed Popup */}
+      <AlertDialog open={showRegistrationClosed} onOpenChange={setShowRegistrationClosed}>
+        <AlertDialogContent className="max-w-md bg-white rounded-2xl shadow-2xl border-0">
+          <AlertDialogHeader className="text-center space-y-4">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+              <Info className="h-8 w-8 text-red-600" />
+            </div>
+            <AlertDialogTitle className="text-2xl font-bold text-gray-900">
+              Registration Closed
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-lg text-gray-600 space-y-3">
+              <p>
+                We're sorry, but registration for new members has now closed for the 
+                <span className="font-semibold text-green-700"> Rotaract Earth Initiative 2025</span>.
+              </p>
+              <p>
+                Please wait for our next event to join us in making a difference!
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col sm:flex-col gap-3 mt-4">
+            <AlertDialogAction 
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-semibold text-lg transition-all duration-200"
+              onClick={() => setShowRegistrationClosed(false)}
+            >
+              Understood
+            </AlertDialogAction>
+            <Button
+              variant="outline"
+              className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 py-3 px-6 rounded-lg font-medium text-lg"
+              onClick={() => setShowRegistrationClosed(false)}
+            >
+              Close
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Main Content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4 pt-24">
