@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { CalendarIcon, Loader2, CheckCircle2 } from 'lucide-react';
+import { CalendarIcon, Loader2, CheckCircle2, ChevronDown } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,6 +18,12 @@ import {
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'react-hot-toast';
+
+// Country codes configuration
+const COUNTRY_CODES = [
+  { code: '+256', country: 'Uganda', networks: ['MTN', 'Airtel', 'Uganda Telecom', 'Africell'] },
+  { code: '+254', country: 'Kenya', networks: ['M-Pesa', 'Airtel Money', 'Safaricom'] },
+];
 
 const formSchema = z.object({
   amount: z.number({
@@ -49,17 +55,36 @@ const formSchema = z.object({
       });
     }
   }),
+  countryCode: z.string().optional().superRefine((val, ctx) => {
+    if ((ctx as any).paymentMethod === "mobile_money" && !val) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Country code is required for mobile money",
+      });
+    }
+  }),
   mobileNumber: z.string().optional().superRefine((val, ctx) => {
     if ((ctx as any).paymentMethod === "mobile_money" && !val) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Mobile number is required for mobile money",
       });
-    } else if ((ctx as any).paymentMethod === "mobile_money" && val && !/^0\d{9}$/.test(val)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Enter a valid 10-digit mobile number starting with 0",
-      });
+    } else if ((ctx as any).paymentMethod === "mobile_money" && val) {
+      const countryCode = (ctx as any).countryCode;
+      let isValid = true;
+      
+      if (countryCode === '+256') { // Uganda
+        isValid = /^\d{9}$/.test(val); // 9 digits without leading 0
+      } else if (countryCode === '+254') { // Kenya
+        isValid = /^\d{9}$/.test(val); // 9 digits without leading 0
+      }
+      
+      if (!isValid) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Enter a valid mobile number format for selected country",
+        });
+      }
     }
   }),
   network: z.string().optional().superRefine((val, ctx) => {
@@ -95,16 +120,24 @@ export default function LiquidationRequestForm({ session }: { session: any }) {
       accountNumber: '',
       accountName: '',
       bankName: '',
+      countryCode: '+256', // Default to Uganda
       mobileNumber: '',
       network: '',
       reason: '',
     },
   });
 
+  const selectedPaymentMethod = form.watch("paymentMethod");
+  const selectedCountryCode = form.watch("countryCode");
+  const selectedNetwork = form.watch("network");
+
+  // Get available networks for selected country
+  const availableNetworks = COUNTRY_CODES.find(country => country.code === selectedCountryCode)?.networks || [];
+
   const onSubmit = (values: FormValues) => {
     startTransition(async () => {
       try {
-        const requestData = {
+        const requestData: any = {
           amount: values.amount,
           paymentMethod: values.paymentMethod,
           accountName: values.accountName,
@@ -117,11 +150,13 @@ export default function LiquidationRequestForm({ session }: { session: any }) {
             accountNumber: values.accountNumber,
             mobileNumber: null,
             network: null,
+            countryCode: null,
           } : {
             bankName: null,
             accountNumber: null,
             mobileNumber: values.mobileNumber,
             network: values.network,
+            countryCode: values.countryCode,
           })
         };
 
@@ -245,9 +280,11 @@ export default function LiquidationRequestForm({ session }: { session: any }) {
                               if (e.target.value === "bank") {
                                 form.resetField("mobileNumber");
                                 form.resetField("network");
+                                form.resetField("countryCode");
                               } else {
                                 form.resetField("bankName");
                                 form.resetField("accountNumber");
+                                form.setValue("countryCode", "+256"); // Reset to default
                               }
                             }}
                           >
@@ -262,7 +299,7 @@ export default function LiquidationRequestForm({ session }: { session: any }) {
                   />
                 </div>
 
-                {form.watch("paymentMethod") === "bank" && (
+                {selectedPaymentMethod === "bank" && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
@@ -294,8 +331,69 @@ export default function LiquidationRequestForm({ session }: { session: any }) {
                   </div>
                 )}
 
-                {form.watch("paymentMethod") === "mobile_money" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {selectedPaymentMethod === "mobile_money" && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="countryCode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Country</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <select
+                                  {...field}
+                                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none"
+                                  onChange={(e) => {
+                                    field.onChange(e.target.value);
+                                    // Reset network and mobile number when country changes
+                                    form.resetField("network");
+                                    form.resetField("mobileNumber");
+                                  }}
+                                >
+                                  {COUNTRY_CODES.map((country) => (
+                                    <option key={country.code} value={country.code}>
+                                      {country.country} ({country.code})
+                                    </option>
+                                  ))}
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 opacity-50 pointer-events-none" />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="network"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Mobile Network</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <select
+                                  {...field}
+                                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none"
+                                >
+                                  <option value="">Select network</option>
+                                  {availableNetworks.map((network) => (
+                                    <option key={network} value={network}>
+                                      {network}
+                                    </option>
+                                  ))}
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 opacity-50 pointer-events-none" />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
                     <FormField
                       control={form.control}
                       name="mobileNumber"
@@ -303,19 +401,35 @@ export default function LiquidationRequestForm({ session }: { session: any }) {
                         <FormItem>
                           <FormLabel>Mobile Number</FormLabel>
                           <FormControl>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                                +256
-                              </span>
-                              <Input
-                                {...field}
-                                placeholder="712345678"
-                                className="pl-14"
-                                onChange={(e) => {
-                                  const value = e.target.value.replace(/\D/g, '').slice(0, 9);
-                                  field.onChange(value ? `0${value}` : '');
-                                }}
-                              />
+                            <div className="flex gap-2">
+                              <div className="w-32">
+                                <div className="relative">
+                                  <Input
+                                    value={selectedCountryCode}
+                                    disabled
+                                    className="text-center font-medium bg-gray-50"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex-1">
+                                <Input
+                                  {...field}
+                                  placeholder={
+                                    selectedCountryCode === '+256' ? "712345678" :
+                                    selectedCountryCode === '+254' ? "712345678" :
+                                    selectedCountryCode === '+255' ? "712345678" :
+                                    selectedCountryCode === '+250' ? "712345678" : "Enter mobile number"
+                                  }
+                                  onChange={(e) => {
+                                    // Allow only numbers and limit based on country
+                                    const value = e.target.value.replace(/\D/g, '');
+                                    let maxLength = 9; // Default for East Africa
+                                    
+                                    // You can add different length validations per country if needed
+                                    field.onChange(value.slice(0, maxLength));
+                                  }}
+                                />
+                              </div>
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -323,29 +437,15 @@ export default function LiquidationRequestForm({ session }: { session: any }) {
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="network"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Mobile Network</FormLabel>
-                          <FormControl>
-                            <select
-                              {...field}
-                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              <option value="">Select network</option>
-                              <option value="MTN">MTN</option>
-                              <option value="Airtel">Airtel</option>
-                              <option value="Uganda Telecom">Uganda Telecom</option>
-                              <option value="Africell">Africell</option>
-                            </select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                    {/* Helper text for number format */}
+                    <div className="text-sm text-gray-500 bg-blue-50 p-3 rounded-lg">
+                      <p className="font-medium">Number Format Guide:</p>
+                      <ul className="mt-1 space-y-1">
+                        <li>• Uganda (+256): Enter 9 digits without 0 (e.g., 712345678 for 0712345678)</li>
+                        <li>• Kenya (+254): Enter 9 digits without 0 (e.g., 712345678 for 0712345678)</li>
+                      </ul>
+                    </div>
+                  </>
                 )}
 
                 <FormField
@@ -354,7 +454,7 @@ export default function LiquidationRequestForm({ session }: { session: any }) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        {form.watch("paymentMethod") === "mobile_money" 
+                        {selectedPaymentMethod === "mobile_money" 
                           ? "Recipient Name" 
                           : "Account Name"}
                       </FormLabel>
@@ -362,7 +462,7 @@ export default function LiquidationRequestForm({ session }: { session: any }) {
                         <Input 
                           {...field} 
                           placeholder={
-                            form.watch("paymentMethod") === "mobile_money" 
+                            selectedPaymentMethod === "mobile_money" 
                               ? "Enter recipient name" 
                               : "Enter account holder name"
                           } 
